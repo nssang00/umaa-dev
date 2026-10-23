@@ -162,7 +162,9 @@ int main(int argc,char** argv) {
     } else dds_sleepfor(DDS_MSECS(25));
   }
   if(!accepted || !disposed || engine.size()!=0) throw umaa::ModuleLoadError("command lifecycle incomplete");
-  dds_sleepfor(DDS_MSECS(350)); // reliable reader collects terminal status & disposes
+  report(dds_wait_for_acks(status_writer,DDS_SECS(3)),"status reliable acknowledgment");
+  report(dds_wait_for_acks(ack_writer,DDS_SECS(3)),"ack reliable acknowledgment");
+  dds_sleepfor(DDS_MSECS(1500)); // keep writers alive for reader invalid-data observation
   report(dds_delete(participant),"participant delete");
   std::puts("ENGINE_HOST: PASS official EngineControl command ack/status/dispose proof");
   return 0;
