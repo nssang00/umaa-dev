@@ -19,3 +19,10 @@ for path in sorted(base.rglob('*.h')):
     for i,line in enumerate(lines):
         if re.search(r'(typedef struct|typedef enum|#define .*Topic|^} .*;|\b(sessionID|source|destination|timeStamp|status|command|commandState|ack|reason|rpm|engine|shaft)\b)',line,re.I):
             print('H',i,line.strip()[:180])
+
+for name in ("EngineCommandType.h","EngineCommandStatusType.h","EngineCommandAckReportType.h"):
+    candidates=list(base.rglob(name))
+    if candidates:
+        print("FULL_ENGINE_HEADER",name)
+        for i,line in enumerate(candidates[0].read_text().splitlines()):
+            if 19<=i<=75: print("F",i,line)
