@@ -6,16 +6,16 @@
 
 int main(void) {
   dds_entity_t participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-  if (participant < 0) return 2;
+  if (participant < 0) { fprintf(stderr, "DDS participant creation failed: %d (%s)\n", (int)participant, dds_strretcode(-participant)); return 2; }
   dds_entity_t topic = dds_create_topic(participant, &Demo_EO_BatteryReportType_desc,
                                         "Demo::EO::BatteryReportType", NULL, NULL);
-  if (topic < 0) return 2;
+  if (topic < 0) { fprintf(stderr, "DDS topic creation failed: %d (%s)\n", (int)topic, dds_strretcode(-topic)); return 2; }
   dds_qos_t *qos = dds_create_qos();
   dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
   dds_qset_history(qos, DDS_HISTORY_KEEP_LAST, 16);
   dds_entity_t reader = dds_create_reader(participant, topic, qos, NULL);
   dds_delete_qos(qos);
-  if (reader < 0) return 2;
+  if (reader < 0) { fprintf(stderr, "DDS reader creation failed: %d (%s)\n", (int)reader, dds_strretcode(-reader)); return 2; }
   Demo_EO_BatteryReportType sample = {0};
   void *samples[1] = { &sample };
   dds_sample_info_t info[1];
