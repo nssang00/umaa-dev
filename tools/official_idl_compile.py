@@ -49,6 +49,8 @@ def main():
     ap.add_argument('--source', default='UMAA/EO/BatteryStatus/BatteryReportType.idl')
     ap.add_argument('--out', type=pathlib.Path, required=True)
     ap.add_argument('--cc', default='cc')
+    ap.add_argument('--idlc', default='idlc')
+    ap.add_argument('--generate-only', action='store_true', help='Let CMake/MSVC compile the generated source')
     args = ap.parse_args()
     root = args.root.resolve()
     out = args.out.resolve()
@@ -57,17 +59,21 @@ def main():
     for item in closure:
         parent = out / item.relative_to(root).parent
         parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(['idlc', '-I', str(root), '-o', str(parent), str(item)], check=True)
+        subprocess.run([args.idlc, '-I', str(root), '-o', str(parent), str(item)], check=True)
     generated_c = out / source.with_suffix('.c')
     generated_h = out / source.with_suffix('.h')
     if not generated_c.is_file() or not generated_h.is_file():
         raise FileNotFoundError(f'Expected generated code missing: {source}')
-    obj = out / (source.stem + '.o')
-    subprocess.run([args.cc, '-std=c11', '-fPIC', '-I', str(out),
-                    '-I', str(root), '-c', str(generated_c),
-                    '-o', str(obj)], check=True)
-    print('OFFICIAL_UMAA_TYPESUPPORT_COMPILED', args.source,
-          'transitive_idls=', len(closure), 'object_bytes=', obj.stat().st_size)
+    if not args.generate_only:
+        obj = out / (source.stem + '.o')
+        subprocess.run([args.cc, '-std=c11', '-fPIC', '-I', str(out),
+                        '-I', str(root), '-c', str(generated_c),
+                        '-o', str(obj)], check=True)
+        print('OFFICIAL_UMAA_TYPESUPPORT_COMPILED', args.source,
+              'transitive_idls=', len(closure), 'object_bytes=', obj.stat().st_size)
+    else:
+        print('OFFICIAL_UMAA_TYPESUPPORT_GENERATED', args.source,
+              'transitive_idls=', len(closure), 'compiler=', args.idlc)
 
 
 if __name__ == '__main__':
