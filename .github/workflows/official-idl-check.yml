@@ -37,5 +37,18 @@ jobs:
                   print('OFFICIAL_IDL_MATCH', token, matched[:5])
               assert len(idls) >= 100, 'Expected substantial official UMAA 6.0 IDL collection'
           PY
+      - name: Compile actual UMAA BatteryReportType IDL with Cyclone idlc
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cyclonedds-dev
+          mkdir -p /tmp/umaa-official/idl /tmp/umaa-official/generated
+          unzip -qq /tmp/umaa-6.0-idl.zip -d /tmp/umaa-official/idl
+          test -f /tmp/umaa-official/idl/UMAA/EO/BatteryStatus/BatteryReportType.idl
+          idlc -I /tmp/umaa-official/idl -o /tmp/umaa-official/generated \
+            /tmp/umaa-official/idl/UMAA/EO/BatteryStatus/BatteryReportType.idl
+          test -s /tmp/umaa-official/generated/BatteryReportType.c
+          test -s /tmp/umaa-official/generated/BatteryReportType.h
+          echo OFFICIAL_UMAA_BATTERY_IDLC_PASS
 # The official ZIP is NOT committed to the repository or uploaded as an Action artifact.
 # Repository users must review the AUVSI UMAA IDL Terms of Use before redistribution or use.
