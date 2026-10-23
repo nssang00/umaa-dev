@@ -52,45 +52,22 @@ def main():
     args = ap.parse_args()
     root = args.root.resolve()
     out = args.out.resolve()
-    closure = collect(root, root / args.source)
+    source = pathlib.Path(args.source)
+    closure = collect(root, root / source)
     for item in closure:
         parent = out / item.relative_to(root).parent
         parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(['idlc', '-I', str(root), '-o', str(parent), str(item)], check=True)
-    target = out / pathlib.Path(args.source).with_suffix('.c')
-    assert target.is_file(), str(target)
+    generated_c = out / source.with_suffix('.c')
+    generated_h = out / source.with_suffix('.h')
+    if not generated_c.is_file() or not generated_h.is_file():
+        raise FileNotFoundError(f'Expected generated code missing: {source}')
+    obj = out / (source.stem + '.o')
     subprocess.run([args.cc, '-std=c11', '-fPIC', '-I', str(out),
-                    '-I', str(root), '-c', str(target),
-                    '-o', str(out / 'official-battery.o')], check=True)
-    header = out / pathlib.Path(args.source).with_suffix('.h')
-    lines = header.read_text().splitlines()
-    flag = False
-    for line in lines:
-        if line.strip().startswith('typedef struct UMAA_EO_BatteryStatus_BatteryReportType'):
-            flag = True
-        elif flag and line.strip().startswith('}'):
-            flag = False
-        elif flag:
-            print('OFFICIAL_BATTERY_MEMBER', line.strip()[:140])
-    for p in closure:
-        print('OFFICIAL_IDL_DEP',p.relative_to(root).as_posix())
-    for h in sorted(out.rglob('*.h')):
-        txt = h.read_text()
-        for symbol in ('UMAA_Common_Measurement_EnergyPercent', 'UMAA_Common_IdentifierType'):
-            pos = txt.find('typedef struct ' + symbol)
-            if pos == -1:
-                continue
-            part = txt[pos:pos+900].split('}',1)[0]
-            for line in part.splitlines()[1:15]:
-                if line.strip():
-                    print('OFFICIAL_NESTED_MEMBER',symbol,line.strip()[:140])
-    for h in sorted(out.rglob('*.h')):
-        ls = h.read_text().splitlines()
-        positions = [i for i,line in enumerate(ls) if 'EnergyPercent' in line]
-        for i in positions[:3]:
-            for j in range(max(0,i-4),min(len(ls),i+5)):
-                print('OFFICIAL_ENERGY_LAYOUT',h.name,j,ls[j].strip()[:140])
-    print(f'OFFICIAL_BATTERY_TYPESUPPORT_COMPILED files={len(closure)}')
+                    '-I', str(root), '-c', str(generated_c),
+                    '-o', str(obj)], check=True)
+    print('OFFICIAL_UMAA_TYPESUPPORT_COMPILED', args.source,
+          'transitive_idls=', len(closure), 'object_bytes=', obj.stat().st_size)
 
 
 if __name__ == '__main__':
