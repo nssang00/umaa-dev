@@ -9,17 +9,17 @@ import time
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
-        print('Usage: run.py <publisher> <simulator>', file=sys.stderr)
+    if len(sys.argv) != 4:
+        print('Usage: run.py <publisher> <simulator> <battery-module>', file=sys.stderr)
         return 2
-    publisher, simulator = sys.argv[1:]
+    publisher, simulator, module_path = sys.argv[1:]
     env = dict(os.environ)
     # Fixed, non-default domain separates simultaneous CI runs from each other.
     # Use Cyclone DDS default discovery: multicast disabled without peers prevents discovery.
     sim = subprocess.Popen([simulator], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     try:
         time.sleep(0.5)
-        pub = subprocess.run([publisher], env=env, capture_output=True, text=True, timeout=20)
+        pub = subprocess.run([publisher, module_path], env=env, capture_output=True, text=True, timeout=20)
         if pub.returncode != 0:
             print('PUBLISHER FAILED rc=', pub.returncode, pub.stdout, pub.stderr, flush=True)
             if sim.poll() is not None:
