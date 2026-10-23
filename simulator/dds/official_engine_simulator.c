@@ -81,7 +81,12 @@ int main(void){
                  nstate,(int)s.commandStatus,(int)s.commandStatusReason);
          return 7;
        }
-       printf("ENGINE_SIM: status=%s\n",labels[nstate]);++nstate;
+       printf("ENGINE_SIM: status=%s state=%d\n",labels[nstate],(int)info[0].instance_state);++nstate;
+       // DDS may attach DISPOSED instance state to the last valid sample
+       // instead of yielding a separate invalid-data placeholder.
+       if(nstate==4 && info[0].instance_state==DDS_IST_NOT_ALIVE_DISPOSED){
+          disposed_status=1; puts("ENGINE_SIM: status Dispose observed with terminal data");
+       }
      }else if(info[0].instance_state==DDS_IST_NOT_ALIVE_DISPOSED){
        if(nstate!=4){fputs("ENGINE_SIM: status disposed before CANCELED\n",stderr);return 8;}
        disposed_status=1;puts("ENGINE_SIM: status Dispose observed");
