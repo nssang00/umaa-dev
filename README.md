@@ -1,23 +1,34 @@
-# UMAA SDK and independent simulator research workspace
+# UMAA SDK + Independent Simulator
 
-This repository hosts the **cross-platform native service plugin smoke implementation** under `smoke/`. It is a **prototype**, not an official UMAA 6.0 or K-MOSA certified implementation.
+Two **separate projects** for development and independent verification of UMAA services:
 
-## Verified on GitHub-hosted runners
-- Ubuntu 24.04 / GCC
-- Ubuntu 24.04 / Clang
-- Windows Server 2022 / MSVC
+- [sdk/](sdk/): synthetic-subset IDL generator, typed C++ Handler examples, Command/Report/Collection prototype, versioned native service module loader (DLL/SO), installable CMake package and tests.
+- [simulator/](simulator/): independent scenario runner and protocol trace verifier. The working test fixture exchanges JSON events over stdio; it does not use DDS.
 
-[Actions results](https://github.com/nssang00/umaa-dev/actions) run CMake + CTest against native .so/.dll modules. The smoke tests exercise module loading, ABI checks, start/invoke/stop/destroy and reload.
+## Cross-platform GitHub CI — executed
 
-## Scope and gaps
-The **full local SDK and independent simulator** are separate projects from earlier prototype artifacts and have not yet been uploaded to this repository. They include synthetic subset-IDL generation, C++ command/report/collection state code and independent stdio scenario verification. Nothing in this GitHub smoke test exercises official UMAA-generated DDS types, Cyclone DDS, RTI Connext, or on-wire interoperability. See `STATUS.md` and `docs/DELIVERY_GATES.md`.
+| GitHub-hosted runner | Result |
+| --- | --- |
+| Ubuntu 24.04 / GCC | PASS |
+| Ubuntu 24.04 / Clang | PASS |
+| Windows Server 2022 / MSVC | PASS |
 
-## K-MOSA-aligned proposal
-Each UMAA logical service is designed as a separately deployable native module (Windows DLL or Linux SO); the host retains command protocol, DDS, QoS and session ownership. `smoke/include/umaa/module_api.h` is an **internal prototype ABI**, not an official K-MOSA API. Hot swap during active sessions is not yet implemented.
+**[Full SDK + Simulator Actions run](https://github.com/nssang00/umaa-dev/actions/runs/39941190249)**: all three matrix jobs passed, verified from GitHub-hosted job logs. Each job performed 5 Python codegen unit tests, 6 independent simulator oracle unit tests, a CMake build, CTest **4/4**, CMake install and external consumer build, and four cross-process simulator scenarios (**32 observed events total**). A separate earlier smoke workflow also verified native DLL/SO modules on the same three environments.
 
-## Local test
-```bash
-cmake -S smoke -B build/native
-cmake --build build/native --config Debug
-ctest --test-dir build/native -C Debug --output-on-failure
+## Local reproduction
+
+Requires Python 3.10+, CMake 3.20+, a C++17 compiler:
+
+```sh
+python tools/ci_verify.py --compiler default
+# Linux/Clang only:
+python tools/ci_verify.py --compiler clang
 ```
+
+The verifier writes command logs and JSON summaries under `evidence/ci/<platform>/<compiler>/`, while the GitHub workflow uploads job artifacts.
+
+## Scope / limits
+
+This repository contains a **technology prototype**, not a complete UMAA 6.0 implementation or official K-MOSA/UMAA certification. `sdk/fixtures/demo.idl` is synthetic, the generator implements a deliberately restricted IDL subset, and the independent simulator uses a test-fixture stdio protocol. No real Cyclone DDS, RTI Connext DDS, official UMAA 6.0 TypeSupport, or mixed-vendor DDS test has been executed. The native module ABI is project-defined, not an official K-MOSA ABI, and does not implement live hot swap of active commands.
+
+Read [delivery gates](docs/DELIVERY_GATES.md), [architecture](docs/ARCHITECTURE.md) and [validation evidence](docs/CROSS_PLATFORM_VALIDATION.md) before treating any subset as production-ready.
