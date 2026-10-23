@@ -84,6 +84,12 @@ def main():
             for line in part.splitlines()[1:15]:
                 if line.strip():
                     print('OFFICIAL_NESTED_MEMBER',symbol,line.strip()[:140])
+    for h in sorted(out.rglob('*.h')):
+        ls = h.read_text().splitlines()
+        positions = [i for i,line in enumerate(ls) if 'EnergyPercent' in line]
+        for i in positions[:3]:
+            for j in range(max(0,i-4),min(len(ls),i+5)):
+                print('OFFICIAL_ENERGY_LAYOUT',h.name,j,ls[j].strip()[:140])
     print(f'OFFICIAL_BATTERY_TYPESUPPORT_COMPILED files={len(closure)}')
 
 
