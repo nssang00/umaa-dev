@@ -35,10 +35,11 @@ def inspect(root: pathlib.Path):
     enum = re.search(rf"typedef enum {ENUM}_IgnitionControlEnumType\s*\{{(.*?)\}}", em, re.S)
     if not enum:
         raise ValueError("official IgnitionControl enumeration missing")
-    values = re.findall(rf"{ENUM}_(OFF|RUN)\s*(?:=\s*(\d+))?", enum.group(1))
-    if len(values) != 2 or [v[0] for v in values] != ["OFF", "RUN"]:
+    entries = [v.strip() for v in enum.group(1).split(",") if v.strip()]
+    values = [re.fullmatch(rf"{ENUM}_(OFF|RUN)\s*(?:=\s*(\d+))?", e) for e in entries]
+    if len(values) != 2 or any(v is None for v in values) or [v.group(1) for v in values] != ["OFF", "RUN"]:
         raise ValueError("unsupported ignition enum expansion; update service catalog and tests")
-    ids = [int(v[1]) if v[1] else n for n,v in enumerate(values)]
+    ids = [int(v.group(2)) if v.group(2) else n for n,v in enumerate(values)]
     if ids != [0,1]:
         raise ValueError("unexpected official IgnitionControl enum numeric values")
     return ids
