@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '.github/workflows/official-idl-check.yml'
+      - 'tools/official_idl_compile.py'
   workflow_dispatch:
 permissions:
   contents: read
