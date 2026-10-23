@@ -78,11 +78,12 @@ jobs:
         run: |
           cmake -S dds/cyclone -B build/official-dds \
             -DUMAA_OFFICIAL_GENERATED_ROOT=/tmp/umaa-official/generated \
+            -DUMAA_ENGINE_GENERATED_ROOT=/tmp/umaa-official/engine-type-support \
             -DCMAKE_BUILD_TYPE=Debug
           cmake --build build/official-dds --parallel 2
       - name: Official UMAA BatteryReportType real DDS independent integration
         shell: bash
         run: |
-          ctest --test-dir build/official-dds -R official_umaa_battery_dds_wire --output-on-failure -V
+          ctest --test-dir build/official-dds -R 'official_umaa_(battery_dds_wire|engine_command_flow)' --output-on-failure -V
 # The official ZIP is NOT committed to the repository or uploaded as an Action artifact.
 # Repository users must review the AUVSI UMAA IDL Terms of Use before redistribution or use.
