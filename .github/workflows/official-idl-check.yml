@@ -87,6 +87,6 @@ jobs:
       - name: Official UMAA BatteryReportType real DDS independent integration
         shell: bash
         run: |
-          ctest --test-dir build/official-dds -R 'official_umaa_(battery_dds_wire|engine_command_flow)' --output-on-failure -V
+          ctest --test-dir build/official-dds -R 'official_umaa_(battery_dds_wire|engine_command_flow|engine_update_flow)' --output-on-failure -V
 # The official ZIP is NOT committed to the repository or uploaded as an Action artifact.
 # Repository users must review the AUVSI UMAA IDL Terms of Use before redistribution or use.
