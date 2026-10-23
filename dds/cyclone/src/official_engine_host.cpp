@@ -116,7 +116,7 @@ int main(int argc,char** argv) {
     (unsigned)UMAA_EO_EngineControl_EngineCommandType_desc.m_nkeys,
     (unsigned)UMAA_EO_EngineControl_EngineCommandStatusType_desc.m_nkeys,
     (unsigned)UMAA_EO_EngineControl_EngineCommandAckReportType_desc.m_nkeys);
-  umaa::ServiceModule module(argv[1],"Demo::EO::EngineControl","demo-only");
+  umaa::ServiceModule module(argv[1],"UMAA::EO::EngineControl","umaa-6.0-enginecontrol-ignition-subset-v1");
   EngineHandler handler(module);
   uint8_t provider_id[16];fillid(provider_id,0x22);
   umaa::CommandEngine<int> engine(hexid(provider_id),handler);
