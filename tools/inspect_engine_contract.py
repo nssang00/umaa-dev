@@ -36,3 +36,13 @@ for header in ('MaritimeEnumerationSets.h','Measurements.h','PropulsionType.h','
     for i,line in enumerate(lines):
         if any(p in line for p in pats):
             print('BASE',i, '|'.join(x.strip() for x in lines[max(0,i-2):min(len(lines),i+14)])[:700])
+
+for name in ("EngineCommandType.c","EngineCommandStatusType.c","EngineCommandAckReportType.c"):
+    paths=list(base.rglob(name))
+    if paths:
+        rows=paths[0].read_text().splitlines()
+        print("KEY_DESCRIPTOR_C",name)
+        for i,line in enumerate(rows):
+            if ("keys" in line.lower() or "m_nkeys" in line or "m_keys" in line):
+                for j in range(max(0,i-1),min(len(rows),i+5)):
+                    print("KEY_SRC",j,rows[j].strip()[:200])
