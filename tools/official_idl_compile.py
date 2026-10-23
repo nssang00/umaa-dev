@@ -72,6 +72,18 @@ def main():
             flag = False
         elif flag:
             print('OFFICIAL_BATTERY_MEMBER', line.strip()[:140])
+    for p in closure:
+        print('OFFICIAL_IDL_DEP',p.relative_to(root).as_posix())
+    for h in sorted(out.rglob('*.h')):
+        txt = h.read_text()
+        for symbol in ('UMAA_Common_Measurement_EnergyPercent', 'UMAA_Common_IdentifierType'):
+            pos = txt.find('typedef struct ' + symbol)
+            if pos == -1:
+                continue
+            part = txt[pos:pos+900].split('}',1)[0]
+            for line in part.splitlines()[1:15]:
+                if line.strip():
+                    print('OFFICIAL_NESTED_MEMBER',symbol,line.strip()[:140])
     print(f'OFFICIAL_BATTERY_TYPESUPPORT_COMPILED files={len(closure)}')
 
 
