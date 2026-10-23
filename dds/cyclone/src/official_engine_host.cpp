@@ -112,7 +112,7 @@ void emit(const std::vector<umaa::Event>& events,const Cmd& incoming,
 int main(int argc,char** argv) {
  if(argc!=2){std::fputs("usage: official_engine_host <engine-service-module>\n",stderr);return 2;}
  try {
-  std::fprintf(stderr,"ENGINE_HOST TypeSupport keys: command=%u status=%u ack=%u\n",
+  std::printf("ENGINE_HOST TypeSupport keys: command=%u status=%u ack=%u\n",
     (unsigned)UMAA_EO_EngineControl_EngineCommandType_desc.m_nkeys,
     (unsigned)UMAA_EO_EngineControl_EngineCommandStatusType_desc.m_nkeys,
     (unsigned)UMAA_EO_EngineControl_EngineCommandAckReportType_desc.m_nkeys);
