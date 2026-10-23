@@ -1,0 +1,53 @@
+name: Import validated SDK and simulator sources
+on:
+  push:
+    paths:
+      - .github/workflows/bootstrap-import.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Check SHA256, safe paths and expand source files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, io, lzma, pathlib, tarfile
+          parts = [pathlib.Path('bootstrap/umaa-src.part%02d' % n).read_text(encoding='ascii')
+                   for n in range(1, 8)]
+          compressed = base64.b64decode(''.join(parts), validate=True)
+          digest = hashlib.sha256(compressed).hexdigest()
+          expected = '0c5a2c874cae901d0b18e9c4c6a3a9c2e339c8d72c796dfbb13270402ce3f4a5'
+          assert digest == expected, ('Bundle hash mismatch: ' + digest)
+          with tarfile.open(fileobj=io.BytesIO(lzma.decompress(compressed)), mode='r:') as archive:
+              extracted = 0
+              for member in archive:
+                  path = pathlib.PurePosixPath(member.name)
+                  if not member.isfile() or path.is_absolute() or '..' in path.parts:
+                      raise ValueError('Unsafe or non-file tar member: ' + member.name)
+                  if path.parts[0] not in {'sdk', 'simulator', 'tools'}:
+                      raise ValueError('Unexpected root: ' + member.name)
+                  target = pathlib.Path(*path.parts)
+                  if target.exists():
+                      raise ValueError('Will not overwrite existing source: ' + member.name)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(archive.extractfile(member).read())
+                  extracted += 1
+          print('sha256', digest, 'extracted files', extracted)
+          assert extracted == 31, ('Unexpected file count: %d' % extracted)
+          PY
+      - name: Commit unpacked native sources
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sdk/ simulator/ tools/
+          git diff --cached --check
+          git commit -m "Import complete SDK and independent simulator prototype sources"
+          git push origin HEAD:main
