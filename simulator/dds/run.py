@@ -9,13 +9,14 @@ import time
 
 
 def main() -> int:
-    if len(sys.argv) != 4:
-        print('Usage: run.py <publisher> <simulator> <battery-module>', file=sys.stderr)
+    if len(sys.argv) not in (4, 5):
+        print('Usage: run.py <publisher> <simulator> <service-module> [simulator-scenario-flag]', file=sys.stderr)
         return 2
-    publisher, simulator, module_path = sys.argv[1:]
+    publisher, simulator, module_path = sys.argv[1:4]
+    sim_options = sys.argv[4:]
     env = dict(os.environ)
     # Use Cyclone DDS default discovery: multicast disabled without peers prevents discovery.
-    sim = subprocess.Popen([simulator], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    sim = subprocess.Popen([simulator, *sim_options], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     try:
         time.sleep(0.5)
         pub = subprocess.run([publisher, module_path], env=env, capture_output=True, text=True, timeout=20)
