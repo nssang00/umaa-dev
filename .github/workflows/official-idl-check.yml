@@ -67,6 +67,11 @@ jobs:
             --out /tmp/umaa-official/engine-type-support \
             --source UMAA/EO/EngineControl/EngineCommandStatusType.idl
           echo OFFICIAL_UMAA_ENGINE_COMMAND_TYPES_COMPILED
+          python3 tools/official_idl_compile.py \
+            --root /tmp/umaa-official/idl \
+            --out /tmp/umaa-official/engine-type-support \
+            --source UMAA/EO/EngineControl/EngineCommandAckReportType.idl
+          echo OFFICIAL_UMAA_ENGINE_ACK_TYPES_COMPILED
           python3 tools/inspect_engine_contract.py
       - name: Configure and compile official UMAA type-based C++ plugin Host and independent simulator
         shell: bash
