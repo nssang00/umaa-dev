@@ -85,4 +85,10 @@ if(DEFINED UMAA_ENGINE_GENERATED_ROOT)
             "$<TARGET_FILE:umaa_official_engine_simulator>"
             "$<TARGET_FILE:umaa_dds_engine_module>")
   set_tests_properties(official_umaa_engine_command_flow PROPERTIES TIMEOUT 40)
+  add_test(NAME official_umaa_engine_update_flow
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../simulator/dds/run.py"
+            "$<TARGET_FILE:umaa_official_engine_host>"
+            "$<TARGET_FILE:umaa_official_engine_simulator>"
+            "$<TARGET_FILE:umaa_dds_engine_module>" --update)
+  set_tests_properties(official_umaa_engine_update_flow PROPERTIES TIMEOUT 40)
 endif()
