@@ -1,0 +1,40 @@
+"""Independent real-Cyclone-DDS process supervisor for the simulator executable.
+
+No SDK-internal import, and no synthetic stdio events: subprocesses use DDS directly.
+"""
+import os
+import subprocess
+import sys
+import time
+
+
+def main() -> int:
+    if len(sys.argv) != 3:
+        print('Usage: run.py <publisher> <simulator>', file=sys.stderr)
+        return 2
+    publisher, simulator = sys.argv[1:]
+    env = dict(os.environ)
+    # Fixed, non-default domain separates simultaneous CI runs from each other.
+    env.setdefault('CYCLONEDDS_URI', '<CycloneDDS><Domain><General><AllowMulticast>false</AllowMulticast></General></Domain></CycloneDDS>')
+    sim = subprocess.Popen([simulator], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    try:
+        time.sleep(0.5)
+        pub = subprocess.run([publisher], env=env, capture_output=True, text=True, timeout=20)
+        if pub.returncode != 0:
+            print(pub.stdout + pub.stderr)
+            return pub.returncode
+        out, _ = sim.communicate(timeout=12)
+        print(pub.stdout)
+        print(out)
+        return 0 if sim.returncode == 0 and 'SIM: PASS' in out else 3
+    except subprocess.TimeoutExpired:
+        print('DDS integration timeout', file=sys.stderr)
+        return 4
+    finally:
+        if sim.poll() is None:
+            sim.kill()
+            sim.communicate()
+
+
+if __name__ == '__main__':
+    sys.exit(main())
