@@ -6,10 +6,10 @@
 | G2 C++ common protocol | Command status/ack/update/cancel/recovery policy, report, collection tests | PASS for tested prototype paths |
 | G3 Independent simulator | Runs external process, rejects invalid traces, verifies expected scenarios | PASS using stdio fixture |
 | G4 SDK distribution | Install CMake target and import from external consumer | PASS |
-| G5 Official IDL 6.0 | Compile official IDL of each supported service, incl. enums/typedefs/annotations/sequences | PARTIAL (AUVSI original 352 IDLs downloaded in CI; BatteryReportType, EngineCommandType, EngineCommandStatusType generated and compiled, not all IDLs/services) |
+| G5 Official IDL 6.0 | Compile official IDL of each supported service, incl. enums/typedefs/annotations/sequences | PARTIAL (AUVSI original 352 IDLs verified and pinned by SHA-256 in CI; BatteryReportType generated/compiled and sent on wire on Linux and Windows; EngineCommandType and EngineCommandStatusType generated/compiled on Linux, but full services/IDL universe untested) |
 | G6 Service catalog | Every generated topic, role, required QoS validated against official Component Definitions/ICDs | OPEN (Service Catalog not independently derived or verified across all ICDs; current TypeSupport is official but topic name/QoS and all service fields need compliance review) |
 | G7 Full protocol | LargeSet/List full DDS atomic semantics, specializations, startup/recovery, liveliness, all reasons | OPEN |
-| G8 Cyclone DDS | Real DDS participant/reader/writer over official IDL, keyed/Dispose/liveliness/QoS tests | PARTIAL (real DDS Cyclone C TypeSupport BatteryReportType + SO plugin and independent Simulator PASS on Ubuntu; Windows synthetic DDS PASS; complete QoS/liveliness/Command still open) |
+| G8 Cyclone DDS | Real DDS participant/reader/writer over official IDL, keyed/Dispose/liveliness/QoS tests | PARTIAL (real DDS Cyclone C TypeSupport BatteryReportType + independently observed keyed Dispose PASS with native SO/DLL plugin on both Ubuntu and Windows; complete QoS/liveliness/Command still open) |
 | G9 RTI Connext 7.7 | Build/run same user handler on RTI + licensing | BLOCKED (missing RTI SDK/license) |
 | G10 Cross vendor | Cyclone↔RTI both directions with specified QoS and XTypes | BLOCKED |
 | G11 Independent conformance | Full ICD+Compliance Specification test corpus and evidence | BLOCKED (missing compliance materials) |

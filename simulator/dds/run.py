@@ -14,7 +14,6 @@ def main() -> int:
         return 2
     publisher, simulator, module_path = sys.argv[1:]
     env = dict(os.environ)
-    # Fixed, non-default domain separates simultaneous CI runs from each other.
     # Use Cyclone DDS default discovery: multicast disabled without peers prevents discovery.
     sim = subprocess.Popen([simulator], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     try:

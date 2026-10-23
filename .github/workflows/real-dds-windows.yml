@@ -47,6 +47,9 @@ jobs:
           $archive = Join-Path $env:RUNNER_TEMP 'umaa-6.0-idl.zip'
           $root = Join-Path $env:RUNNER_TEMP 'umaa-6.0-idl'
           Invoke-WebRequest 'https://www.auvsi.org/wp-content/uploads/2025/03/umaa-6.0-idl.zip' -OutFile $archive
+          $expected = '9674EF84B92CC296A544D001D58149EFBB4650F4FAFE3A40819636DF49C42411'
+          $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+          if ($actual -ne $expected) { throw "Unexpected official UMAA IDL SHA256: $actual" }
           Expand-Archive -LiteralPath $archive -DestinationPath $root -Force
           if (-not (Test-Path "$root/UMAA/EO/BatteryStatus/BatteryReportType.idl")) { throw 'Official UMAA IDL archive is incomplete' }
       - name: Generate official UMAA BatteryReport TypeSupport with vcpkg idlc

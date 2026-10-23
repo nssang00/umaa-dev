@@ -18,3 +18,7 @@
 The sample messages are synthetic and exchange **stdio**, not DDS. This run does not establish official UMAA 6.0 compliance, K-MOSA certification, or DDS vendor interoperability.
 
 **To reproduce:** `python tools/ci_verify.py --compiler default` (use `--compiler clang` on Ubuntu/Clang).
+
+## Official UMAA 6.0 live DDS proof (separate from synthetic stdio tests)
+
+Linux [official BatteryStatus](https://github.com/nssang00/umaa-dev/actions/runs/39952219497), Windows [official BatteryStatus](https://github.com/nssang00/umaa-dev/actions/runs/39953508112), and Linux [Engine Command/Status TypeSupport generation/compilation](https://github.com/nssang00/umaa-dev/actions/runs/39952552116) have separately passed. Details, precise scope and exclusions are in [REAL_DDS_EVIDENCE.md](REAL_DDS_EVIDENCE.md). The stdio-test CTest matrix above must not be conflated with these real DDS tests.
