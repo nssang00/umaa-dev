@@ -69,6 +69,7 @@ if(DEFINED UMAA_ENGINE_GENERATED_ROOT)
       "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/examples/engine_control_user_handler.cpp")
   target_include_directories(umaa_dds_engine_module PRIVATE
       "${ENGINE_PLUGIN_OUT}" "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include")
+  target_compile_features(umaa_dds_engine_module PRIVATE cxx_std_17)
   add_executable(umaa_official_engine_host src/official_engine_host.cpp)
   target_compile_features(umaa_official_engine_host PRIVATE cxx_std_17)
   target_include_directories(umaa_official_engine_host PRIVATE
