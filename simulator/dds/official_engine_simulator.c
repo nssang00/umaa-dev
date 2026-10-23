@@ -85,6 +85,8 @@ int main(void){
      }else if(info[0].instance_state==DDS_IST_NOT_ALIVE_DISPOSED){
        if(nstate!=4){fputs("ENGINE_SIM: status disposed before CANCELED\n",stderr);return 8;}
        disposed_status=1;puts("ENGINE_SIM: status Dispose observed");
+     } else {
+       fprintf(stderr,"ENGINE_SIM: status invalid-data instance_state=%d phase=%d\n",(int)info[0].instance_state,nstate);
      }
      dds_sample_free(&s,&UMAA_EO_EngineControl_EngineCommandStatusType_desc,DDS_FREE_CONTENTS);
    }
