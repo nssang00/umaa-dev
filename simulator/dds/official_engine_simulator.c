@@ -116,6 +116,9 @@ int main(int argc,char** argv){
           fputs("ENGINE_SIM: malformed or duplicate Ack\n",stderr);return 10;
        }
        ++got_ack;puts("ENGINE_SIM: command Ack verified");
+       if(got_ack==(updating?2:1) && ai[0].instance_state==DDS_IST_NOT_ALIVE_DISPOSED){
+         disposed_ack=1;puts("ENGINE_SIM: Ack Dispose observed with last valid Ack");
+       }
      }else if(ai[0].instance_state==DDS_IST_NOT_ALIVE_DISPOSED){
        if(!got_ack){fputs("ENGINE_SIM: disposed Ack before sample\n",stderr);return 11;}
        disposed_ack=1;puts("ENGINE_SIM: Ack Dispose observed");
