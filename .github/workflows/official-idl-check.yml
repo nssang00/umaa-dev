@@ -56,6 +56,15 @@ jobs:
             --out /tmp/umaa-official/generated \
             --source UMAA/EO/BatteryStatus/BatteryReportType.idl
           echo OFFICIAL_UMAA_BATTERY_TYPE_COMPILE_PASS
+          python3 tools/official_idl_compile.py \
+            --root /tmp/umaa-official/idl \
+            --out /tmp/umaa-official/engine-type-support \
+            --source UMAA/EO/EngineControl/EngineCommandType.idl
+          python3 tools/official_idl_compile.py \
+            --root /tmp/umaa-official/idl \
+            --out /tmp/umaa-official/engine-type-support \
+            --source UMAA/EO/EngineControl/EngineCommandStatusType.idl
+          echo OFFICIAL_UMAA_ENGINE_COMMAND_TYPES_COMPILED
       - name: Configure and compile official UMAA type-based C++ plugin Host and independent simulator
         shell: bash
         run: |
