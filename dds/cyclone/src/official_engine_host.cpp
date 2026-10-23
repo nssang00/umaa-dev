@@ -25,6 +25,7 @@ constexpr auto EXECUTING=UMAA_Common_MaritimeEnumeration_CommandStatusEnumModule
 constexpr auto CANCELED=UMAA_Common_MaritimeEnumeration_CommandStatusEnumModule_CANCELED;
 constexpr auto SUCCEEDED=UMAA_Common_MaritimeEnumeration_CommandStatusReasonEnumModule_SUCCEEDED;
 constexpr auto CANCELED_REASON=UMAA_Common_MaritimeEnumeration_CommandStatusReasonEnumModule_CANCELED;
+constexpr auto UPDATED_REASON=UMAA_Common_MaritimeEnumeration_CommandStatusReasonEnumModule_UPDATED;
 
 std::string hexid(const uint8_t id[16]) {
   static const char* hex="0123456789abcdef";
@@ -84,7 +85,7 @@ void emit(const std::vector<umaa::Event>& events,const Cmd& incoming,
     std::memcpy(s.sessionID,incoming.sessionID,16);
     s.timeStamp.seconds=(decltype(s.timeStamp.seconds))time(nullptr);
     s.commandStatus=state_enum(e.detail.empty() ? "EXECUTING" : e.detail);
-    s.commandStatusReason=(e.detail=="CANCELED"?CANCELED_REASON:SUCCEEDED);
+    s.commandStatusReason=(e.detail=="CANCELED"?CANCELED_REASON:(e.reason=="UPDATED"?UPDATED_REASON:SUCCEEDED));
     Ack ack{};
     ack.command=incoming;
     std::memcpy(ack.sessionID,incoming.sessionID,16);
@@ -146,7 +147,7 @@ int main(int argc,char** argv) {
     report(n,"read command");
     if(n>0) {
       if(info[0].valid_data) {
-        if(accepted) throw umaa::ModuleLoadError("unexpected second command");
+        // Session updates use identical source+session, newer Timestamp; core validates both.
         if(std::memcmp(data.destination.id,provider_id,16)!=0)
           throw umaa::ModuleLoadError("command destination did not match configured provider");
         last_source=hexid(data.source.id);
@@ -155,6 +156,10 @@ int main(int argc,char** argv) {
                           (int64_t)data.timeStamp.seconds*1000000+data.timeStamp.nanoseconds/1000};
         const int state=static_cast<int>(data.state);
         auto events=engine.receive(id,state);
+        for(const auto& event:events){
+          if(event.kind==umaa::Event::Kind::Ignored)
+            throw umaa::ModuleLoadError("rejected command: "+event.detail);
+        }
         last_cmd=data;
         // The test uses no optional pointer fields; do not retain generated DDS pointers.
         last_cmd.plugState=nullptr;last_cmd.propulsion=nullptr;
