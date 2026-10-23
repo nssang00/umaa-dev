@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/official-idl-check.yml'
       - 'tools/official_idl_compile.py'
+      - 'tools/inspect_engine_contract.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -66,6 +67,7 @@ jobs:
             --out /tmp/umaa-official/engine-type-support \
             --source UMAA/EO/EngineControl/EngineCommandStatusType.idl
           echo OFFICIAL_UMAA_ENGINE_COMMAND_TYPES_COMPILED
+          python3 tools/inspect_engine_contract.py
       - name: Configure and compile official UMAA type-based C++ plugin Host and independent simulator
         shell: bash
         run: |
