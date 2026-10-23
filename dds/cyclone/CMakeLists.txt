@@ -56,10 +56,19 @@ if(DEFINED UMAA_ENGINE_GENERATED_ROOT)
   add_library(umaa_engine_type_support STATIC ${ENGINE_TYPES})
   target_include_directories(umaa_engine_type_support PUBLIC "${ENGINE_ROOT}")
   target_link_libraries(umaa_engine_type_support PUBLIC CycloneDDS::ddsc)
+  set(ENGINE_PLUGIN_OUT "${CMAKE_CURRENT_BINARY_DIR}/generated-engine-plugin")
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_official_engine_plugin.py"
+            --type-root "${ENGINE_ROOT}" --output "${ENGINE_PLUGIN_OUT}"
+    RESULT_VARIABLE ENGINE_PLUGIN_GEN_RESULT)
+  if(NOT ENGINE_PLUGIN_GEN_RESULT EQUAL 0)
+    message(FATAL_ERROR "Official EngineControl Handler/plugin code generation failed")
+  endif()
   add_library(umaa_dds_engine_module MODULE
-      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/tests/modules/engine.cpp")
+      "${ENGINE_PLUGIN_OUT}/engine_control_module.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/examples/engine_control_user_handler.cpp")
   target_include_directories(umaa_dds_engine_module PRIVATE
-      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include")
+      "${ENGINE_PLUGIN_OUT}" "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include")
   add_executable(umaa_official_engine_host src/official_engine_host.cpp)
   target_compile_features(umaa_official_engine_host PRIVATE cxx_std_17)
   target_include_directories(umaa_official_engine_host PRIVATE
