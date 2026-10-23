@@ -49,3 +49,12 @@
 - Windows: DLL BatteryStatus module and MSVC official C TypeSupport same on-wire operation, [Actions run](https://github.com/nssang00/umaa-dev/actions/runs/39953508112) PASS.
 - EngineCommandType and EngineCommandStatusType generated/compiled via official Cyclone `idlc` on Linux; [run](https://github.com/nssang00/umaa-dev/actions/runs/39952552116) PASS. Actual EngineControl DDS command state machine integration is **NOT** implemented.
 - Open: official UMAA service-compliant Topic/Key/Source/time semantics, QoS full mapping, Handler codegen on official IDL, full EngineControl on-wire flow, RTI integration, official K-MOSA conformity and all-ICD conformance. This proof remains a **partial, non-certified prototype**.
+
+## 2026-10-23 — Milestone 3: official EngineControl ignition subset + complete IDL compile coverage
+
+- Official original ZIP SHA-256 pinned; on Ubuntu **all 352 AUVSI 6.0 IDL files generated with Cyclone idlc and 352 C TypeSupport sources compiled**, [coverage run](https://github.com/nssang00/umaa-dev/actions/runs/39963083783).
+- Official EngineCommand, EngineCommandStatus, EngineCommandAckReport and dependencies generated in ephemeral CI. Fail-closed `tools/generate_official_engine_plugin.py` validates the required official members/enums and emits user Handler + plugin glue. The user-only demo implementation is unchanged and DDS-free.
+- SDK Host loads the generated SO/DLL and invokes common `CommandEngine`; independent Simulator verifies RUN issuance, Ack, ISSUED/COMMANDED/EXECUTING, later-timestamp same-session OFF update with ISSUED(UPDATED), and DDS Command/Status/Ack Dispose. No natural auto-completion.
+- Linux official DDS CTest 3/3 [PASS](https://github.com/nssang00/umaa-dev/actions/runs/39962602416). Windows official DDS CTest 3/3 [PASS](https://github.com/nssang00/umaa-dev/actions/runs/39962717265). Baseline cross-platform 9 Python generator tests, 6 Simulator tests, CTest 4/4, 4 scenarios [PASS](https://github.com/nssang00/umaa-dev/actions/runs/39962717654).
+- Bugs corrected: generated module MSVC C++17 setting, DDS Dispose evidence carried on last valid sample's instance_state, safe terminal data instance key for Dispose. Regression/negative verification remains enforced.
+- **Unfinished:** full per-service official Handler codegen, EngineControl plugState/propulsion binding, exact service QoS/liveliness/recovery requirements, RTI vendor/cross-vendor tests, safety, formal UMAA/K-MOSA certification.

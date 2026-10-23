@@ -26,3 +26,11 @@
 - Safe active-command Hot Swap; security/signing or K-MOSA formal conformance.
 
 The result supports an **official UMAA type serialization and transport proof**, not a normative service compliance claim. The broader SDK+Simulator milestone is **partial**.
+
+## EngineControl and all official IDL Types (additional evidence)
+
+- [Linux EngineControl Command/Ack/Status/Cancel/Dispose and later-Timestamp Update](https://github.com/nssang00/umaa-dev/actions/runs/39962602416): official TypeSupport, auto-generated ignition Handler/SO, independent DDS Simulator, CTest 3/3 (includes BatteryStatus).
+- [Windows equivalent EngineControl + BatteryStatus proof](https://github.com/nssang00/umaa-dev/actions/runs/39962717265): official TypeSupport, generated Handler/DLL, independent DDS Simulator, CTest 3/3.
+- [Full official 352 IDL TypeSupport compile coverage](https://github.com/nssang00/umaa-dev/actions/runs/39963083783): 352 generated and 352 C files compiled on Ubuntu; no SDK end-user codegen conclusion from this tally.
+
+Detailed trace and exclusions: [ENGINECONTROL_EVIDENCE.md](ENGINECONTROL_EVIDENCE.md).

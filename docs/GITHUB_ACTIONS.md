@@ -8,9 +8,9 @@ Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 - Verifies native service DLL/SO module loader, Command/Report/Collection unit behavior, subset-IDL generator, CMake install and external consumer, and **separate independent Simulator** subprocess scenarios.
 - Uploads per-run JSON and detailed logs in Actions artifacts.
 
-**Latest proof:** https://github.com/nssang00/umaa-dev/actions/runs/39941404598 — all three jobs SUCCESS, CTest 4/4 and Simulator 4 scenarios in each environment.
+**Latest proof:** https://github.com/nssang00/umaa-dev/actions/runs/39962717654 — all three jobs SUCCESS, CTest 4/4 and Simulator 4 scenarios in each environment.
 
-**Not covered:** official UMAA 6.0 IDL, real DDS network/RTPS transport, Cyclone↔RTI on-wire interoperability, full ICD compliance, K-MOSA certification, safe active-command hot swap.
+**This baseline workflow alone** is synthetic and does not cover DDS. Separate native DDS workflows now test official EngineControl and BatteryStatus; Cyclone↔RTI interop, full ICD compliance, K-MOSA certification and safe active-command hot swap remain unverified.
 
 These gaps are documented in `docs/DELIVERY_GATES.md`. **Do not mark blocked acceptance gates as pass.**
 
@@ -21,3 +21,11 @@ These gaps are documented in `docs/DELIVERY_GATES.md`. **Do not mark blocked acc
 - [`.github/workflows/real-dds-windows.yml`](../.github/workflows/real-dds-windows.yml): vcpkg Cyclone DDS 0.10.5 + MSVC, both synthetic and official UMAA BatteryReportType DDS CTest with native DLL module. [Passing run](https://github.com/nssang00/umaa-dev/actions/runs/39953508112).
 
 Both projects are distinct: the Simulator connects via DDS from an independent process and never links SDK Command state machine code. Official IDL is downloaded into CI runner temp, and must never be redistributed with the prototype. See [REAL_DDS_EVIDENCE.md](REAL_DDS_EVIDENCE.md) for limitations.
+
+## Milestone 2 official live DDS and complete IDL coverage
+
+- [Linux official-IDL integration](https://github.com/nssang00/umaa-dev/actions/runs/39962602416): BatteryStatus and EngineControl Command/Update CTest **3/3**, generated ignition-only Handler module loaded as native SO.
+- [Windows official-IDL integration](https://github.com/nssang00/umaa-dev/actions/runs/39962717265): same official UMAA DDS **3/3** on MSVC, generated DLL.
+- [Full official IDL TypeSupport coverage](https://github.com/nssang00/umaa-dev/actions/runs/39963083783): **352/352** official idlc generation and **352/352** generated C compilation on Ubuntu; this does not establish all service APIs or compliance.
+
+See [ENGINECONTROL_EVIDENCE.md](ENGINECONTROL_EVIDENCE.md) for correct scope limits and links.
