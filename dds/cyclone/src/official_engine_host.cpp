@@ -76,6 +76,8 @@ auto state_enum(const std::string& state) {
 }
 void emit(const std::vector<umaa::Event>& events,const Cmd& incoming,
           dds_entity_t status_writer,dds_entity_t ack_writer) {
+  Status latest{};
+  bool status_written=false;
   for(const auto& e:events) {
     Status s{};
     fillid(s.source.id,0x22);
@@ -90,12 +92,14 @@ void emit(const std::vector<umaa::Event>& events,const Cmd& incoming,
     ack.timeStamp.seconds=s.timeStamp.seconds;
     if(e.kind==umaa::Event::Kind::Status) {
       report(dds_write(status_writer,&s),"write status");
+      latest=s; status_written=true;
       std::printf("ENGINE_HOST: status=%s\n",e.detail.c_str());
     } else if(e.kind==umaa::Event::Kind::Ack) {
       report(dds_write(ack_writer,&ack),"write ack");
       std::puts("ENGINE_HOST: ack published");
     } else if(e.kind==umaa::Event::Kind::DisposeStatus) {
-      report(dds_dispose(status_writer,&s),"dispose status");
+      // Dispose the same concrete status instance as the most recent write.
+      report(dds_dispose(status_writer,status_written?&latest:&s),"dispose status");
       std::puts("ENGINE_HOST: status disposed");
     } else if(e.kind==umaa::Event::Kind::DisposeAck) {
       report(dds_dispose(ack_writer,&ack),"dispose ack");
