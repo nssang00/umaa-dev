@@ -43,3 +43,36 @@ if(DEFINED UMAA_OFFICIAL_GENERATED_ROOT)
             "$<TARGET_FILE:umaa_dds_battery_module>")
   set_tests_properties(official_umaa_battery_dds_wire PROPERTIES TIMEOUT 35)
 endif()
+
+
+# EngineControl official AUVSI 6.0 Command/Status/Ack TypeSupport from external IDL.
+# SDK Host owns protocol state management and user module dispatch.
+if(DEFINED UMAA_ENGINE_GENERATED_ROOT)
+  file(TO_CMAKE_PATH "${UMAA_ENGINE_GENERATED_ROOT}" ENGINE_ROOT)
+  file(GLOB_RECURSE ENGINE_TYPES CONFIGURE_DEPENDS "${ENGINE_ROOT}/UMAA/*.c")
+  if(NOT ENGINE_TYPES)
+    message(FATAL_ERROR "Official EngineControl TypeSupport missing")
+  endif()
+  add_library(umaa_engine_type_support STATIC ${ENGINE_TYPES})
+  target_include_directories(umaa_engine_type_support PUBLIC "${ENGINE_ROOT}")
+  target_link_libraries(umaa_engine_type_support PUBLIC CycloneDDS::ddsc)
+  add_library(umaa_dds_engine_module MODULE
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/tests/modules/engine.cpp")
+  target_include_directories(umaa_dds_engine_module PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include")
+  add_executable(umaa_official_engine_host src/official_engine_host.cpp)
+  target_compile_features(umaa_official_engine_host PRIVATE cxx_std_17)
+  target_include_directories(umaa_official_engine_host PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include")
+  target_link_libraries(umaa_official_engine_host PRIVATE
+      umaa_engine_type_support ${CMAKE_DL_LIBS})
+  add_executable(umaa_official_engine_simulator
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../simulator/dds/official_engine_simulator.c")
+  target_link_libraries(umaa_official_engine_simulator PRIVATE umaa_engine_type_support)
+  add_test(NAME official_umaa_engine_command_flow
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../../simulator/dds/run.py"
+            "$<TARGET_FILE:umaa_official_engine_host>"
+            "$<TARGET_FILE:umaa_official_engine_simulator>"
+            "$<TARGET_FILE:umaa_dds_engine_module>")
+  set_tests_properties(official_umaa_engine_command_flow PROPERTIES TIMEOUT 40)
+endif()
