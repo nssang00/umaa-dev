@@ -1,0 +1,45 @@
+name: UMAA SDK + Independent Simulator / cross-platform prototype
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Prototype checks / ${{ matrix.os }} / ${{ matrix.compiler }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: default
+          - os: ubuntu-24.04
+            compiler: clang
+          - os: windows-2022
+            compiler: default
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Build and verify C++ library, dynamic modules, generator, independent simulator
+        run: python tools/ci_verify.py --compiler ${{ matrix.compiler }}
+      - name: Upload evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: umaa-prototype-${{ matrix.os }}-${{ matrix.compiler }}-evidence
+          path: evidence/ci/
+          if-no-files-found: warn
+
+# These checks are NOT UMAA on-wire DDS or K-MOSA formal conformance tests.
+# Actual vendor runners must be added once SDK and independent simulator have
+# official IDL-generated TypeSupport and compatible Cyclone/RTI binaries.
