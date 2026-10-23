@@ -50,19 +50,10 @@ jobs:
           test -s /tmp/umaa-official/generated/BatteryReportType.c
           test -s /tmp/umaa-official/generated/BatteryReportType.h
           echo OFFICIAL_UMAA_BATTERY_IDLC_PASS
-          python3 - <<'PY'
-          import pathlib,re
-          h = pathlib.Path('/tmp/umaa-official/generated/BatteryReportType.h').read_text()
-          lines = h.splitlines()
-          for i,line in enumerate(lines):
-              if 'BatteryReportType' in line:
-                  print('GENERATED_SYMBOL',i, line.strip()[:180])
-          print('GENERATED_HEADER_LINES',len(lines))
-          PY
-          cc -std=c11 -fPIC \
-            -I /tmp/umaa-official/generated -I /tmp/umaa-official/idl \
-            -c /tmp/umaa-official/generated/BatteryReportType.c \
-            -o /tmp/umaa-official/generated/BatteryReportType.o
+          python3 tools/official_idl_compile.py \
+            --root /tmp/umaa-official/idl \
+            --out /tmp/umaa-official/generated \
+            --source UMAA/EO/BatteryStatus/BatteryReportType.idl
           echo OFFICIAL_UMAA_BATTERY_TYPE_COMPILE_PASS
 # The official ZIP is NOT committed to the repository or uploaded as an Action artifact.
 # Repository users must review the AUVSI UMAA IDL Terms of Use before redistribution or use.
