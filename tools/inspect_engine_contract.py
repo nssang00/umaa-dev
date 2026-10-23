@@ -26,3 +26,13 @@ for name in ("EngineCommandType.h","EngineCommandStatusType.h","EngineCommandAck
         print("FULL_ENGINE_HEADER",name)
         for i,line in enumerate(candidates[0].read_text().splitlines()):
             if 19<=i<=75: print("F",i,line)
+
+for header in ('MaritimeEnumerationSets.h','Measurements.h','PropulsionType.h','IdentifierType.h'):
+    pths=list(base.rglob(header))
+    if not pths: continue
+    lines=pths[0].read_text().splitlines()
+    pats=('CommandStatusEnumType','CommandStatusReasonEnumType','IgnitionControlEnumType','NumericGUID','typedef struct UMAA_Common_IdentifierType','typedef struct UMAA_Common_Propulsion_PropulsionType','typedef struct UMAA_Common_Measurement_DateTime')
+    print('BASE_HEADER',header)
+    for i,line in enumerate(lines):
+        if any(p in line for p in pats):
+            print('BASE',i, '|'.join(x.strip() for x in lines[max(0,i-2):min(len(lines),i+14)])[:700])
