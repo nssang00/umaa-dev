@@ -21,7 +21,7 @@ set_tests_properties(real_dds_battery_report_dispose PROPERTIES TIMEOUT 35)
 
 # Generate official UMAA TypeSupport from AUVSI input only in CI or a user-supplied build tree.
 if(DEFINED UMAA_OFFICIAL_GENERATED_ROOT)
-  set(OFFICIAL_ROOT "${UMAA_OFFICIAL_GENERATED_ROOT}")
+  file(TO_CMAKE_PATH "${UMAA_OFFICIAL_GENERATED_ROOT}" OFFICIAL_ROOT)
   file(GLOB_RECURSE OFFICIAL_TYPES CONFIGURE_DEPENDS "${OFFICIAL_ROOT}/UMAA/*.c")
   if(NOT OFFICIAL_TYPES)
     message(FATAL_ERROR "Official TypeSupport missing; invoke tools/official_idl_compile.py first")
