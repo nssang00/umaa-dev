@@ -5,6 +5,7 @@ on:
       - '.github/workflows/real-dds-windows.yml'
       - 'dds/cyclone/**'
       - 'simulator/dds/**'
+      - 'tools/official_idl_compile.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -40,12 +41,51 @@ jobs:
           $env:PATH = "$vcpkgRoot/installed/x64-windows/bin;$env:PATH"
           ctest --test-dir build/real-dds-win -C Release --output-on-failure -V
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Obtain original UMAA 6.0 IDL into temporary Windows workspace
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'umaa-6.0-idl.zip'
+          $root = Join-Path $env:RUNNER_TEMP 'umaa-6.0-idl'
+          Invoke-WebRequest 'https://www.auvsi.org/wp-content/uploads/2025/03/umaa-6.0-idl.zip' -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $root -Force
+          if (-not (Test-Path "$root/UMAA/EO/BatteryStatus/BatteryReportType.idl")) { throw 'Official UMAA IDL archive is incomplete' }
+      - name: Generate official UMAA BatteryReport TypeSupport with vcpkg idlc
+        shell: pwsh
+        run: |
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
+          $idlc = Get-ChildItem -Path "$vcpkgRoot/installed/x64-windows" -Filter idlc.exe -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $idlc) { throw 'No Cyclone idlc.exe found in vcpkg installation' }
+          $root = Join-Path $env:RUNNER_TEMP 'umaa-6.0-idl'
+          $output = Join-Path $env:RUNNER_TEMP 'umaa-official-generated'
+          python tools/official_idl_compile.py --root $root --out $output --idlc $idlc --generate-only --source UMAA/EO/BatteryStatus/BatteryReportType.idl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile actual official UMAA BatteryReportType on Windows MSVC
+        shell: pwsh
+        run: |
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
+          $root = Join-Path $env:RUNNER_TEMP 'umaa-official-generated'
+          cmake -S dds/cyclone -B build/official-dds-win -G 'Visual Studio 17 2022' -A x64 -DCMAKE_TOOLCHAIN_FILE="$vcpkgRoot/scripts/buildsystems/vcpkg.cmake" -DUMAA_OFFICIAL_GENERATED_ROOT="$root"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build/official-dds-win --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Actual UMAA 6.0 BatteryStatus DDS independent Windows integration
+        shell: pwsh
+        run: |
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
+          $env:PATH = "$vcpkgRoot/installed/x64-windows/bin;$env:PATH"
+          ctest --test-dir build/official-dds-win -C Release -R official_umaa_battery_dds_wire --output-on-failure -V
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Upload CTest output
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: real-cyclone-windows-ctest
-          path: build/real-dds-win/Testing/Temporary/
+          path: |
+            build/real-dds-win/Testing/Temporary/
+            build/official-dds-win/Testing/Temporary/
           if-no-files-found: warn
 
-# Synthetic IDL real DDS test. Official UMAA TypeSupport on Windows not yet established.
+# Official UMAA source is obtained only into the ephemeral runner and not redistributed.
