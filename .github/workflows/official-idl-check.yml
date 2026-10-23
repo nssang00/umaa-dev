@@ -1,0 +1,41 @@
+name: Official UMAA 6.0 IDL acquisition check (no redistribution)
+on:
+  push:
+    paths:
+      - '.github/workflows/official-idl-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-official-archive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download original AUVSI Distro A UMAA 6.0 IDL ZIP into ephemeral runner
+        shell: bash
+        run: |
+          curl --fail --show-error --location --retry 2 --connect-timeout 20 --max-time 120 \
+            'https://www.auvsi.org/wp-content/uploads/2025/03/umaa-6.0-idl.zip' \
+            --output /tmp/umaa-6.0-idl.zip
+          file /tmp/umaa-6.0-idl.zip
+          sha256sum /tmp/umaa-6.0-idl.zip
+      - name: Archive health and official service topic inventory
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          path = '/tmp/umaa-6.0-idl.zip'
+          with zipfile.ZipFile(path) as arc:
+              assert arc.testzip() is None, 'Bad CRC in official IDL ZIP'
+              names = arc.namelist()
+              idls = [n for n in names if n.lower().endswith('.idl')]
+              print('OFFICIAL_IDL_TOTAL_FILES', len(names))
+              print('OFFICIAL_IDL_IDL_FILES', len(idls))
+              for token in ('EngineCommandType', 'BatteryReportType', 'UMAACommand'):
+                  matched = [n for n in idls if token.lower() in n.lower()]
+                  print('OFFICIAL_IDL_MATCH', token, matched[:5])
+              assert len(idls) >= 100, 'Expected substantial official UMAA 6.0 IDL collection'
+          PY
+# The official ZIP is NOT committed to the repository or uploaded as an Action artifact.
+# Repository users must review the AUVSI UMAA IDL Terms of Use before redistribution or use.
