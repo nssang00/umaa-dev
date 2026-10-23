@@ -5,6 +5,9 @@ on:
       - '.github/workflows/official-idl-check.yml'
       - 'tools/official_idl_compile.py'
       - 'tools/inspect_engine_contract.py'
+      - 'dds/cyclone/**'
+      - 'simulator/dds/**'
+      - 'sdk/include/umaa/command_engine.hpp'
   workflow_dispatch:
 permissions:
   contents: read
