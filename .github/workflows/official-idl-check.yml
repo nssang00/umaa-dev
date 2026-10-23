@@ -56,5 +56,16 @@ jobs:
             --out /tmp/umaa-official/generated \
             --source UMAA/EO/BatteryStatus/BatteryReportType.idl
           echo OFFICIAL_UMAA_BATTERY_TYPE_COMPILE_PASS
+      - name: Configure and compile official UMAA type-based C++ plugin Host and independent simulator
+        shell: bash
+        run: |
+          cmake -S dds/cyclone -B build/official-dds \
+            -DUMAA_OFFICIAL_GENERATED_ROOT=/tmp/umaa-official/generated \
+            -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build/official-dds --parallel 2
+      - name: Official UMAA BatteryReportType real DDS independent integration
+        shell: bash
+        run: |
+          ctest --test-dir build/official-dds -R official_umaa_battery_dds_wire --output-on-failure -V
 # The official ZIP is NOT committed to the repository or uploaded as an Action artifact.
 # Repository users must review the AUVSI UMAA IDL Terms of Use before redistribution or use.
