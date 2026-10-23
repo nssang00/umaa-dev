@@ -1,43 +1,44 @@
-name: UMAA dynamic module cross-platform smoke
+name: UMAA SDK + Independent Simulator / cross-platform prototype
+
 on:
   push:
   pull_request:
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  native-module:
-    name: service DLL/SO / ${{ matrix.os }} / ${{ matrix.compiler }}
-    runs-on: ${{ matrix.os }}
+  build-test:
+    name: Prototype checks / ${{ matrix.os }} / ${{ matrix.compiler }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-24.04
-            compiler: gcc
+            compiler: default
           - os: ubuntu-24.04
             compiler: clang
           - os: windows-2022
-            compiler: msvc
+            compiler: default
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - name: Configure
-        shell: bash
-        run: |
-          if [ "${{ matrix.compiler }}" = clang ]; then
-            cmake -S smoke -B build/native -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug
-          else
-            cmake -S smoke -B build/native -DCMAKE_BUILD_TYPE=Debug
-          fi
-      - name: Build
-        run: cmake --build build/native --config Debug --parallel 2
-      - name: Test
-        run: ctest --test-dir build/native --build-config Debug --output-on-failure
-      - name: Save test evidence
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Build and verify C++ library, dynamic modules, generator, independent simulator
+        run: python tools/ci_verify.py --compiler ${{ matrix.compiler }}
+      - name: Upload evidence even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: native-module-${{ matrix.os }}-${{ matrix.compiler }}
-          path: build/native/Testing/Temporary/
-          if-no-files-found: ignore
-# This job verifies only native module ABI load/unload, NOT UMAA DDS/IDL compliance.
+          name: umaa-prototype-${{ matrix.os }}-${{ matrix.compiler }}-evidence
+          path: evidence/ci/
+          if-no-files-found: warn
+
+# This workflow verifies SYNTHETIC IDL + core prototype + stdio simulation.
+# It does not validate real Cyclone / RTI DDS or official UMAA conformance.
