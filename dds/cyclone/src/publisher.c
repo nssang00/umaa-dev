@@ -10,7 +10,7 @@ int main(void) {
   dds_entity_t participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
   if (participant < 0) { fprintf(stderr, "DDS participant creation failed: %d (%s)\n", (int)participant, dds_strretcode(-participant)); return 2; }
   dds_entity_t topic = dds_create_topic(participant, &Demo_EO_BatteryReportType_desc,
-                                        "Demo::EO::BatteryReportType", NULL, NULL);
+                                        "Demo_EO_BatteryReportType", NULL, NULL);
   if (topic < 0) { fprintf(stderr, "DDS topic creation failed: %d (%s)\n", (int)topic, dds_strretcode(-topic)); return 2; }
   dds_qos_t *qos = dds_create_qos();
   dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
