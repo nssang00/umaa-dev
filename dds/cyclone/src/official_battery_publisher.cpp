@@ -4,8 +4,15 @@
 #include <dds/dds.h>
 #include "UMAA/EO/BatteryStatus/BatteryReportType.h"
 #include "umaa/module_loader.hpp"
+#include "umaa/report_engine.hpp"
 #include <cstdio>
 #include <exception>
+#include <cstdlib>
+
+struct BatteryHandler final : umaa::ReportHandler<double> {
+  double value{20.0};
+  double read_report() const override { return value; }
+};
 
 #define CHECK_DDS(x) do { dds_return_t e_=(x); if(e_<0) { \
   std::fprintf(stderr,"DDS error at %d: %s\n",__LINE__,dds_strretcode(-e_)); return 2; } } while(0)
@@ -14,6 +21,12 @@ int main(int argc, char** argv) {
   if (argc != 2) return 2;
   try {
     umaa::ServiceModule battery(argv[1], "Demo::EO::BatteryStatus", "demo-only");
+    BatteryHandler handler;
+    umaa::ReportProviderLifecycle<double> report("battery-demo", handler);
+    auto started = report.start(1);
+    using Kind = umaa::ReportIntent<double>::Kind;
+    if (started.size() != 2 || started[0].kind != Kind::RegisterPublisher ||
+        started[1].kind != Kind::Publish || !started[1].report) return 9;
     dds_entity_t participant = dds_create_participant(DDS_DOMAIN_DEFAULT, nullptr, nullptr);
     CHECK_DDS(participant);
     dds_entity_t topic = dds_create_topic(participant, &UMAA_EO_BatteryStatus_BatteryReportType_desc,
@@ -25,22 +38,33 @@ int main(int argc, char** argv) {
     dds_entity_t writer=dds_create_writer(participant,topic,q,nullptr);
     dds_delete_qos(q);
     CHECK_DDS(writer);
+    const char* required = std::getenv("UMAA_EXPECT_READERS");
+    const int expected_readers = required ? std::atoi(required) : 1;
+    if (expected_readers < 1 || expected_readers > 2) return 9;
     dds_publication_matched_status_t matched{};
     bool found=false;
-    for(int n=0;n<200;++n) {
+    // Test-only extension for finite discovery blackout; production limit is unchanged.
+    const int attempts = std::getenv("UMAA_NETEM_RECOVERY") ? 1600 : 200;
+    for(int n=0;n<attempts;++n) {
       CHECK_DDS(dds_get_publication_matched_status(writer,&matched));
-      if(matched.current_count>0){found=true;break;}
+      if(matched.current_count>=expected_readers){found=true;break;}
       dds_sleepfor(DDS_MSECS(25));
     }
     if(!found){std::fputs("official publisher: reader not discovered\n",stderr);return 3;}
     UMAA_EO_BatteryStatus_BatteryReportType msg{};
-    UMAA_Common_Measurement_EnergyPercent charge=20.0;
+    UMAA_Common_Measurement_EnergyPercent charge = started[1].report->data;
     msg.chargeRemaining=&charge;
     CHECK_DDS(dds_write(writer,&msg));
     dds_sleepfor(DDS_MSECS(150));
-    charge=static_cast<double>(battery.invoke(2,0));
+    handler.value = static_cast<double>(battery.invoke(2,0));
+    auto updated = report.update(2);
+    if (updated.kind != Kind::Publish || !updated.report) return 9;
+    charge = updated.report->data;
     CHECK_DDS(dds_write(writer,&msg));
     dds_sleepfor(DDS_MSECS(150));
+    auto stopped = report.shutdown(3);
+    if (stopped.size() != 2 || stopped[0].kind != Kind::Dispose ||
+        stopped[1].kind != Kind::UnregisterPublisher) return 9;
     CHECK_DDS(dds_dispose(writer,&msg));
     dds_sleepfor(DDS_MSECS(100));
     CHECK_DDS(dds_delete(participant));

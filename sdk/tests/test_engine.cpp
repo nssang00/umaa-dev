@@ -1,15 +1,18 @@
 #include "umaa/command_engine.hpp"
 #include <cassert>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 struct P { int rpm{}; };
 struct H : umaa::Handler<P> {
   int run_count{};
   bool allow_cancel{true};
-  bool validate(const P& p) override { return p.rpm >= 0; }
+  bool throw_on_validate{false};
+  bool throw_on_cancel{false};
+  bool validate(const P& p) override { if (throw_on_validate) throw std::runtime_error("validation callback"); return p.rpm >= 0; }
   umaa::Outcome execute(const P&) override { ++run_count; return umaa::Outcome::Pending; }
-  bool cancel(const P&) override { return allow_cancel; }
+  bool cancel(const P&) override { if (throw_on_cancel) throw std::runtime_error("cancellation callback"); return allow_cancel; }
 };
 static std::string states(const std::vector<umaa::Event>& events) {
   std::string out;
@@ -65,4 +68,18 @@ int main() {
   assert(states(finally_complete) == "COMPLETED" && finally_complete.size()==3);
   assert(finally_complete.at(1).kind == umaa::Event::Kind::DisposeStatus);
   assert(!e.contains("s5"));
+  h.throw_on_validate = true;
+  auto invalid_exception = e.receive({"c1", "p1", "s6", 1}, {100});
+  assert(states(invalid_exception) == "ISSUED,FAILED");
+  assert(invalid_exception.back().reason == "SERVICE_FAILED");
+  e.command_disposed("c1", "s6");
+  h.throw_on_validate = false;
+  e.receive({"c1", "p1", "s7", 1}, {100});
+  h.throw_on_cancel = true;
+  auto refused = e.command_disposed("c1", "s7");
+  assert(refused.size() == 1 && refused.at(0).detail == "CANCEL_NOT_SAFE");
+  assert(e.contains("s7"));
+  auto completed = e.complete("s7", true);
+  assert(states(completed) == "COMPLETED" && completed.size() == 3);
+  h.throw_on_cancel = false;
 }

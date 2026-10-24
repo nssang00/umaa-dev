@@ -2,6 +2,7 @@
 #include <dds/dds.h>
 #include "UMAA/EO/BatteryStatus/BatteryReportType.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(void) {
   dds_entity_t participant=dds_create_participant(DDS_DOMAIN_DEFAULT,NULL,NULL);
@@ -16,7 +17,8 @@ int main(void) {
   dds_delete_qos(q);
   if(reader<0)return 2;
   int phase=0;
-  for(int i=0;i<250 && phase<3;++i){
+  const int attempts = getenv("UMAA_NETEM_RECOVERY") ? 1600 : 250;
+  for(int i=0;i<attempts && phase<3;++i){
     UMAA_EO_BatteryStatus_BatteryReportType data={0};
     void* samples[1]={&data};
     dds_sample_info_t info[1];
