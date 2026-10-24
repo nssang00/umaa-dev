@@ -8,6 +8,8 @@ on:
       - 'simulator/dds/**'
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
+      - 'tools/audit_official_idl_catalog.py'
+      - 'sdk/tests/test_official_inventory.py'
       - 'tools/verify_official_service_types.py'
       - 'tools/generate_reviewed_service_api.py'
       - 'catalog/**'
@@ -18,6 +20,8 @@ on:
       - 'simulator/dds/**'
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
+      - 'tools/audit_official_idl_catalog.py'
+      - 'sdk/tests/test_official_inventory.py'
   workflow_dispatch:
 
 permissions:
@@ -46,6 +50,28 @@ jobs:
           echo "9674ef84b92cc296a544d001d58149efbb4650f4fafe3a40819636df49c42411  $RUNNER_TEMP/umaa-6.0-idl.zip" | sha256sum --check
           mkdir -p "$RUNNER_TEMP/umaa-6.0-idl"
           unzip -qq "$RUNNER_TEMP/umaa-6.0-idl.zip" -d "$RUNNER_TEMP/umaa-6.0-idl"
+      - name: Test full IDL catalog auditor (synthetic negative fixtures)
+        run: python3 -m unittest discover -s sdk/tests -p test_official_inventory.py -v
+      - name: Audit every official IDL file against reviewed catalog (no guessing)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/audit_official_idl_catalog.py \
+            --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
+            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --out build/netns-evidence/official-idl-catalog-inventory.json
+          # The release gate MUST remain red until all ICD services and QoS are reviewed.
+          set +e
+          python3 tools/audit_official_idl_catalog.py \
+            --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
+            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --out build/netns-evidence/official-idl-catalog-strict-evidence.json \
+            --strict-g6
+          rc=$?
+          set -e
+          if [ "$rc" -ne 3 ]; then
+            echo "Expected incomplete G6 code=3, actual=$rc"; exit 1
+          fi
       - name: Check reviewed service contracts against pinned official IDL
         shell: bash
         run: |
