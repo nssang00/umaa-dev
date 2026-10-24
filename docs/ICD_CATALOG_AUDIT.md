@@ -17,7 +17,7 @@ directory names, matching Topic type names, or a compiling Handler contract.
    Section 5.1 / 6.1 operation headers plus literal Namespace / Topic / Data Type
    declarations; every extracted Topic is matched against the official IDL ZIP.
    The resulting `official-icd-topic-ledger.json` keeps ICD clause references
-   and SHA-256 of each transcription. These transcriptions are secondary sources;
+   and SHA-256 of each transcription. An independent EO-only completeness check requires 14 service sections and 21 literal Topic IDs to match the curated catalog. These transcriptions are secondary sources;
    the AUVSI ICD, Component Definitions and Compliance Specification are the
    authoritative acceptance inputs.
 
@@ -27,20 +27,23 @@ directory names, matching Topic type names, or a compiling Handler contract.
 |---|---:|
 | UMAA official IDL files enumerated | 352 |
 | IDL directory groups that resemble service folders | 61 (not normative service count) |
-| Manually reviewed EO services in SDK catalog | 10 |
-| Types present in official IDL and selected for those services | 15 |
-| Not-yet-reviewed IDL directory groups | 51 |
+| Manually reviewed EO services in SDK catalog | 14 |
+| Types present in official IDL and selected for those services | 21 |
+| Not-yet-reviewed IDL directory groups | 47 |
 | Public ICD texts processed | 6: EO, MO, MM, SA, SEM, SO |
 | Explicit service sections found in those ICDs | 53 |
 | Explicit operation/Topic/IDL triples in those ICDs | 113 |
-| Pre-reviewed catalog Topic IDs cross-checked against ICD records | 15 |
+| Pre-reviewed catalog Topic IDs cross-checked against ICD records | 21 |
 | Full G6 service/QoS/Component acceptance | **FAIL / OPEN** |
 
-The 10 reviewed services: BatteryStatus, EngineControl, EngineStatus,
-FuelTankSpecs, FuelTankStatus, GeneratorSpecs, GeneratorStatus, MastControl,
-MastStatus, UVPlatformSpecs. Both single- and **multi-Report** service shapes are
+The 14 reviewed EO services are AnchorControl, AnchorSpecs, AnchorStatus,
+BatterySpecs, BatteryStatus, EngineControl, EngineStatus, FuelTankSpecs,
+FuelTankStatus, GeneratorSpecs, GeneratorStatus, MastControl, MastStatus, and
+UVPlatformSpecs. All 14 explicit EO 6.1 service sections and all 21 of their
+Topic IDs now have curated Type/role mappings. This is a **literal Topic mapping**
+milestone, not QoS or runtime-complete certification. Both single- and **multi-Report** service shapes are
 supported by the **typed interface generator**; this is not runtime proof of
-every service protocol. Official TypeSupport for all 15 scoped Topics generated
+every service protocol. Official TypeSupport for all 21 scoped Topics generated
 on Ubuntu and Windows; generated C++ service contracts also compile on both.
 
 ## Proof and fail-closed controls
