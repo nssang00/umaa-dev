@@ -1,6 +1,6 @@
 {
-  "catalog_version": "0.3.0-reviewed-subset",
-  "scope": "EO ICD 6.0 ten manually checked service message-role slices, explicitly incomplete; QoS and behavior remain unverified",
+  "catalog_version": "0.4.0-reviewed-eo-section6-1",
+  "scope": "EO ICD 6.0 Section 6.1 complete literal operation-topic type mapping: 14 services/21 topics; no runtime/QoS/conformance claim",
   "basis": {
     "document": "UMAA-SPEC-EOICD",
     "version": "6.0",
@@ -9,6 +9,130 @@
   },
   "complete": false,
   "services": [
+    {
+      "name": "UMAA::EO::AnchorControl",
+      "pattern": "command_response",
+      "clauses": [
+        "5.1",
+        "6.1.1",
+        "6.1.1.1",
+        "6.1.1.2",
+        "6.1.1.3"
+      ],
+      "icd_reviewed": true,
+      "provider_topics": [
+        {
+          "name": "UMAA::EO::AnchorControl::AnchorCommandAckReportType",
+          "type": "UMAA::EO::AnchorControl::AnchorCommandAckReportType",
+          "role": "ack"
+        },
+        {
+          "name": "UMAA::EO::AnchorControl::AnchorCommandStatusType",
+          "type": "UMAA::EO::AnchorControl::AnchorCommandStatusType",
+          "role": "status"
+        }
+      ],
+      "consumer_topics": [
+        {
+          "name": "UMAA::EO::AnchorControl::AnchorCommandType",
+          "type": "UMAA::EO::AnchorControl::AnchorCommandType",
+          "role": "command"
+        }
+      ],
+      "collection_topics": [],
+      "operations": [
+        "reportAnchorCommandAck",
+        "reportAnchorCommandStatus",
+        "setAnchor",
+        "queryAnchorCommandAck",
+        "cancelAnchorCommand"
+      ],
+      "official_idl_verified": false,
+      "dds_qos_verified": false,
+      "dds_behavior_verified": false,
+      "source": "UMAA-SPEC-EOICD 6.0 Section 6.1; protocol/QoS not yet verified"
+    },
+    {
+      "name": "UMAA::EO::AnchorSpecs",
+      "pattern": "request_reply_without_query_data",
+      "clauses": [
+        "5.2.1",
+        "6.1.2",
+        "6.1.2.1"
+      ],
+      "icd_reviewed": true,
+      "provider_topics": [
+        {
+          "name": "UMAA::EO::AnchorSpecs::AnchorSpecsReportType",
+          "type": "UMAA::EO::AnchorSpecs::AnchorSpecsReportType",
+          "role": "report"
+        }
+      ],
+      "consumer_topics": [],
+      "collection_topics": [],
+      "operations": [
+        "queryAnchorSpecs",
+        "reportAnchorSpecs"
+      ],
+      "official_idl_verified": false,
+      "dds_qos_verified": false,
+      "dds_behavior_verified": false,
+      "source": "UMAA-SPEC-EOICD 6.0 Section 6.1; protocol/QoS not yet verified"
+    },
+    {
+      "name": "UMAA::EO::AnchorStatus",
+      "pattern": "request_reply_without_query_data",
+      "clauses": [
+        "5.2.1",
+        "6.1.3",
+        "6.1.3.1"
+      ],
+      "icd_reviewed": true,
+      "provider_topics": [
+        {
+          "name": "UMAA::EO::AnchorStatus::AnchorReportType",
+          "type": "UMAA::EO::AnchorStatus::AnchorReportType",
+          "role": "report"
+        }
+      ],
+      "consumer_topics": [],
+      "collection_topics": [],
+      "operations": [
+        "queryAnchor",
+        "reportAnchor"
+      ],
+      "official_idl_verified": false,
+      "dds_qos_verified": false,
+      "dds_behavior_verified": false,
+      "source": "UMAA-SPEC-EOICD 6.0 Section 6.1; protocol/QoS not yet verified"
+    },
+    {
+      "name": "UMAA::EO::BatterySpecs",
+      "pattern": "request_reply_without_query_data",
+      "clauses": [
+        "5.2.1",
+        "6.1.4",
+        "6.1.4.1"
+      ],
+      "icd_reviewed": true,
+      "provider_topics": [
+        {
+          "name": "UMAA::EO::BatterySpecs::BatterySpecsReportType",
+          "type": "UMAA::EO::BatterySpecs::BatterySpecsReportType",
+          "role": "report"
+        }
+      ],
+      "consumer_topics": [],
+      "collection_topics": [],
+      "operations": [
+        "queryBatterySpecs",
+        "reportBatterySpecs"
+      ],
+      "official_idl_verified": false,
+      "dds_qos_verified": false,
+      "dds_behavior_verified": false,
+      "source": "UMAA-SPEC-EOICD 6.0 Section 6.1; protocol/QoS not yet verified"
+    },
     {
       "name": "UMAA::EO::BatteryStatus",
       "pattern": "request_reply_without_query_data",
@@ -216,33 +340,6 @@
       "source": "UMAA-SPEC-EOICD v6.0, Section 6.1; source document read but no full QoS audit"
     },
     {
-      "name": "UMAA::EO::MastStatus",
-      "pattern": "request_reply_without_query_data",
-      "clauses": [
-        "5.2.1",
-        "6.1.13",
-        "6.1.13.1"
-      ],
-      "icd_reviewed": true,
-      "provider_topics": [
-        {
-          "name": "UMAA::EO::MastStatus::MastReportType",
-          "type": "UMAA::EO::MastStatus::MastReportType",
-          "role": "report"
-        }
-      ],
-      "consumer_topics": [],
-      "collection_topics": [],
-      "operations": [
-        "queryMast",
-        "reportMast"
-      ],
-      "official_idl_verified": false,
-      "dds_qos_verified": false,
-      "dds_behavior_verified": false,
-      "source": "UMAA-SPEC-EOICD v6.0, Section 6.1; source document read but no full QoS audit"
-    },
-    {
       "name": "UMAA::EO::MastControl",
       "pattern": "command_response",
       "clauses": [
@@ -279,6 +376,33 @@
         "cancelMastCommand",
         "reportMastCommandAck",
         "reportMastCommandStatus"
+      ],
+      "official_idl_verified": false,
+      "dds_qos_verified": false,
+      "dds_behavior_verified": false,
+      "source": "UMAA-SPEC-EOICD v6.0, Section 6.1; source document read but no full QoS audit"
+    },
+    {
+      "name": "UMAA::EO::MastStatus",
+      "pattern": "request_reply_without_query_data",
+      "clauses": [
+        "5.2.1",
+        "6.1.13",
+        "6.1.13.1"
+      ],
+      "icd_reviewed": true,
+      "provider_topics": [
+        {
+          "name": "UMAA::EO::MastStatus::MastReportType",
+          "type": "UMAA::EO::MastStatus::MastReportType",
+          "role": "report"
+        }
+      ],
+      "consumer_topics": [],
+      "collection_topics": [],
+      "operations": [
+        "queryMast",
+        "reportMast"
       ],
       "official_idl_verified": false,
       "dds_qos_verified": false,
