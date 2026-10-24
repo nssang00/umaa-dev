@@ -22,11 +22,14 @@ int main(int argc, char** argv) {
   dds_entity_t writer = dds_create_writer(participant, topic, qos, NULL);
   dds_delete_qos(qos);
   if (writer < 0) { fprintf(stderr, "DDS writer creation failed: %d (%s)\n", (int)writer, dds_strretcode(-writer)); return 2; }
+  const char* required = std::getenv("UMAA_EXPECT_READERS");
+  const int expected_readers = required ? std::atoi(required) : 1;
+  if (expected_readers < 1 || expected_readers > 2) return 9;
   dds_publication_matched_status_t matched;
   int found = 0;
   for (int tries = 0; tries < 200; ++tries) {
     ENSURE(dds_get_publication_matched_status(writer, &matched));
-    if (matched.current_count > 0) { found = 1; break; }
+    if (matched.current_count >= expected_readers) { found = 1; break; }
     dds_sleepfor(DDS_MSECS(25));
   }
   if (!found) { fprintf(stderr,"DDS publisher: no simulator reader discovered\n"); return 3; }
