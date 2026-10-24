@@ -9,6 +9,8 @@ on:
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
       - 'tools/audit_official_idl_catalog.py'
+      - 'tools/extract_icd_topic_ledger.py'
+      - 'sdk/tests/test_icd_topic_ledger.py'
       - 'tools/generate_reviewed_type_support.py'
       - 'sdk/tests/test_official_inventory.py'
       - 'tools/verify_official_service_types.py'
@@ -22,6 +24,8 @@ on:
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
       - 'tools/audit_official_idl_catalog.py'
+      - 'tools/extract_icd_topic_ledger.py'
+      - 'sdk/tests/test_icd_topic_ledger.py'
       - 'tools/generate_reviewed_type_support.py'
       - 'sdk/tests/test_official_inventory.py'
   workflow_dispatch:
@@ -74,6 +78,24 @@ jobs:
           if [ "$rc" -ne 3 ]; then
             echo "Expected incomplete G6 code=3, actual=$rc"; exit 1
           fi
+      - name: Extract pinned public ICD literal service-operation-topic ledger
+        shell: bash
+        run: |
+          set -euo pipefail
+          rev='ecb923646e7f3fe569b773c3946444e793d8a8be'
+          mkdir -p "$RUNNER_TEMP/umaa-icd-md"
+          for code in EO MO MM SA SEM SO; do
+            curl --fail --show-error --location --retry 2 --max-time 90 \
+              "https://raw.githubusercontent.com/rticommunity/rticonnextdds-usecases-umaa/$rev/docs/UMAA-SPEC-${code}ICD.md" \
+              --output "$RUNNER_TEMP/umaa-icd-md/UMAA-SPEC-${code}ICD.md"
+          done
+          python3 tools/extract_icd_topic_ledger.py \
+            --markdown-dir "$RUNNER_TEMP/umaa-icd-md" \
+            --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
+            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --source-revision "$rev" \
+            --out build/netns-evidence/official-icd-topic-ledger.json \
+            --expect-services 53 --expect-operations 113
       - name: Check reviewed service contracts against pinned official IDL
         shell: bash
         run: |
