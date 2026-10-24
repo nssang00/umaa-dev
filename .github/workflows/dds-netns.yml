@@ -1,0 +1,86 @@
+name: Cyclone DDS multi-node Linux network namespaces
+
+on:
+  push:
+    paths:
+      - '.github/workflows/dds-netns.yml'
+      - 'dds/cyclone/**'
+      - 'simulator/dds/**'
+      - 'tools/dds_netns.sh'
+      - 'tools/official_idl_compile.py'
+  pull_request:
+    paths:
+      - '.github/workflows/dds-netns.yml'
+      - 'dds/cyclone/**'
+      - 'simulator/dds/**'
+      - 'tools/dds_netns.sh'
+      - 'tools/official_idl_compile.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-dds-wire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cyclone DDS and Linux namespace tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cyclonedds-dev iproute2
+          idlc --version || true
+      - name: Validate namespace harness without root
+        run: |
+          python3 -m unittest discover -s simulator/dds -p test_run_netns.py -v
+          bash -n tools/dds_netns.sh
+      - name: Download and hash-check original AUVSI UMAA 6.0 IDL (ephemeral)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --show-error --retry 2 --connect-timeout 20 --max-time 120 'https://www.auvsi.org/wp-content/uploads/2025/03/umaa-6.0-idl.zip' --output "$RUNNER_TEMP/umaa-6.0-idl.zip"
+          echo "9674ef84b92cc296a544d001d58149efbb4650f4fafe3a40819636df49c42411  $RUNNER_TEMP/umaa-6.0-idl.zip" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/umaa-6.0-idl"
+          unzip -qq "$RUNNER_TEMP/umaa-6.0-idl.zip" -d "$RUNNER_TEMP/umaa-6.0-idl"
+      - name: Generate official UMAA DDS TypeSupport
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/official_idl_compile.py --root "$RUNNER_TEMP/umaa-6.0-idl" --out "$RUNNER_TEMP/umaa-battery-types" --source UMAA/EO/BatteryStatus/BatteryReportType.idl
+          for type in EngineCommandType EngineCommandStatusType EngineCommandAckReportType; do
+            python3 tools/official_idl_compile.py --root "$RUNNER_TEMP/umaa-6.0-idl" --out "$RUNNER_TEMP/umaa-engine-types" --source "UMAA/EO/EngineControl/$type.idl"
+          done
+      - name: Build synthetic and official DDS binaries
+        shell: bash
+        run: |
+          cmake -S dds/cyclone -B build/netns-dds -DCMAKE_BUILD_TYPE=Debug -DUMAA_OFFICIAL_GENERATED_ROOT="$RUNNER_TEMP/umaa-battery-types" -DUMAA_ENGINE_GENERATED_ROOT="$RUNNER_TEMP/umaa-engine-types"
+          cmake --build build/netns-dds --parallel 2
+      - name: Existing same-network DDS process tests (regression)
+        run: ctest --test-dir build/netns-dds --output-on-failure -V
+      - name: Create three isolated network namespaces
+        run: sudo bash tools/dds_netns.sh setup
+      - name: Real DDS 3-node reports and 2-node EngineControl
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/netns-evidence
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_demo_dds_publisher build/netns-dds/umaa_demo_dds_simulator build/netns-dds/libumaa_dds_battery_module.so --subscribers 2 | tee build/netns-evidence/synthetic-report-3node.log
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_battery_publisher build/netns-dds/umaa_official_battery_simulator build/netns-dds/libumaa_dds_battery_module.so --subscribers 2 | tee build/netns-evidence/official-report-3node.log
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_engine_host build/netns-dds/umaa_official_engine_simulator build/netns-dds/libumaa_dds_engine_module.so | tee build/netns-evidence/official-command-2node.log
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_engine_host build/netns-dds/umaa_official_engine_simulator build/netns-dds/libumaa_dds_engine_module.so --update | tee build/netns-evidence/official-update-2node.log
+      - name: Tear down namespaces even on failure
+        if: always()
+        run: sudo bash tools/dds_netns.sh teardown
+      - name: Upload DDS logs (never official IDL)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-dds-namespace-integration
+          path: |
+            build/netns-evidence/*.log
+            build/netns-dds/Testing/Temporary/LastTest.log
+          if-no-files-found: warn
+
+# Real namespace wiring is supported on the Ubuntu runner only.
+# Windows CI tests native DLL/MSVC and DDS processes without Linux netns.
