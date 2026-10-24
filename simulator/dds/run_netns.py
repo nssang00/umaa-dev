@@ -91,6 +91,13 @@ def set_netem(nodes, profile):
               flush=True)
 
 
+def parse_netem_drops(stats):
+    match = re.search(r'\\bdropped\\s+(\\d+)\\b', stats)
+    if not match:
+        raise ValueError('tc netem counters absent: ' + stats)
+    return int(match.group(1))
+
+
 def inspect_outage(nodes):
     drops = 0
     for node in nodes:
@@ -100,10 +107,9 @@ def inspect_outage(nodes):
                                                 'dev', 'eth0'),
                               check=True, text=True, capture_output=True, timeout=10)
         stats = proc.stdout
-        match = re.search(r'dropped\s+(\d+)', stats)
-        if 'netem' not in status or not match:
-            raise RuntimeError('no netem drop counters in ' + node + ': ' + stats)
-        drops += int(match.group(1))
+        if 'netem' not in status:
+            raise RuntimeError('no netem qdisc in ' + node + ': ' + stats)
+        drops += parse_netem_drops(stats)
         print('DDS_NETEM_OUTAGE_STATS ' + node + ': ' + stats.strip(), flush=True)
     if drops < 1:
         raise RuntimeError('outage was configured but no packet drops were observed')
