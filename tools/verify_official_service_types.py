@@ -47,11 +47,19 @@ def inspect(catalog, official_root=None, require_complete=False):
         if not clauses or not all(isinstance(c, str) and re.fullmatch("[0-9]+(?:[.][0-9]+)*", c) for c in clauses):
             errors.append(name + ": missing valid ICD clause references")
         roles = []
+        topic_names = set()
         for side in ("provider_topics", "consumer_topics"):
             topics = record.get(side)
             if not isinstance(topics, list):
                 errors.append(name + ": " + side + " missing"); continue
             for topic in topics:
+                if not isinstance(topic, dict):
+                    errors.append(name + ": topic contract must be an object")
+                    continue
+                topic_name = topic.get("name")
+                if topic_name in topic_names:
+                    errors.append(name + ": duplicate topic name: " + str(topic_name))
+                topic_names.add(topic_name)
                 role = topic.get("role")
                 if role not in ROLES:
                     errors.append(name + ": invalid role: " + str(role))
@@ -70,12 +78,12 @@ def inspect(catalog, official_root=None, require_complete=False):
                                              "idl_sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
                 except ValueError as exc:
                     errors.append(name + ": " + str(exc))
-        if len(set(roles)) != len(roles):
-            errors.append(name + ": duplicate roles")
-        if pattern == "command_response" and set(roles) != {"command", "status", "ack"}:
-            errors.append(name + ": command response needs command/ack/status")
-        if pattern == "request_reply_without_query_data" and set(roles) != {"report"}:
-            errors.append(name + ": queryless request/reply must use Report subscription only")
+        if pattern == "command_response" and (len(roles) != 3 or set(roles) != {"command", "status", "ack"}):
+            errors.append(name + ": command response needs exactly one command, ack, status")
+        if pattern == "request_reply_without_query_data" and (not roles or set(roles) != {"report"}):
+            errors.append(name + ": queryless request/reply requires one or more Report topics only")
+        if pattern == "publish_subscribe" and (not roles or set(roles) != {"report"}):
+            errors.append(name + ": publish-subscribe needs explicitly reviewed Report topics")
         for collection in record.get("collection_topics", []):
             try:
                 type_idl_path(collection)
