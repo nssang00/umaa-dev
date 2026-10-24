@@ -73,6 +73,13 @@ class LiteralIcdExtractionTests(unittest.TestCase):
             self.assertEqual(result["icd_service_sections"], 6)
             self.assertEqual(result["icd_operation_entries"], 10)
             self.assertEqual(result["reviewed_catalog_topics_cross_checked"], 1)
+            with self.assertRaisesRegex(ValueError, "Topic mapping incomplete"):
+                audit(docs, orig, catalog, complete_domains=("EO",))
+            catalog["services"][0]["provider_topics"].append({
+                "name": "UMAA::EO::UVPlatformSpecs::UVPlatformSpecsReportType"})
+            audited = audit(docs, orig, catalog, complete_domains=("EO",))
+            self.assertEqual(audited["domain_topic_mapping_checks"]["EO"]["topic_mappings"], 2)
+            self.assertFalse(audited["domain_topic_mapping_checks"]["EO"]["protocol_qos_verified"])
             (orig / "UMAA/EO/UVPlatformSpecs/UVPlatformSpecsReportType.idl").unlink()
             with self.assertRaisesRegex(ValueError, "absent from official IDL"):
                 audit(docs, orig, catalog)
