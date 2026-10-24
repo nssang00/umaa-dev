@@ -1,0 +1,84 @@
+{
+  "catalog_version": "0.2.0-reviewed-subset",
+  "scope": "EO ICD 6.0 manually reviewed BatteryStatus and EngineControl slice; explicitly incomplete",
+  "basis": {
+    "document": "UMAA-SPEC-EOICD",
+    "version": "6.0",
+    "date": "2024-06-06",
+    "sha256": "47e88ecec73e37562ad04f5cf1ee5aef62b4de7f75e5ef993828f6dc8440d453"
+  },
+  "complete": false,
+  "services": [
+    {
+      "name": "UMAA::EO::BatteryStatus",
+      "pattern": "request_reply_without_query_data",
+      "clauses": [
+        "5.2.1",
+        "6.1.5",
+        "6.1.5.1"
+      ],
+      "icd_reviewed": true,
+      "provider_topics": [
+        {
+          "name": "UMAA::EO::BatteryStatus::BatteryReportType",
+          "type": "UMAA::EO::BatteryStatus::BatteryReportType",
+          "role": "report"
+        }
+      ],
+      "consumer_topics": [],
+      "collection_topics": [
+        "UMAA::EO::BatteryStatus::BatteryReportTypeCellsListElement"
+      ],
+      "operations": [
+        "queryBattery",
+        "reportBattery"
+      ],
+      "official_idl_verified": false,
+      "dds_qos_verified": false,
+      "dds_behavior_verified": false
+    },
+    {
+      "name": "UMAA::EO::EngineControl",
+      "pattern": "command_response",
+      "clauses": [
+        "5.1",
+        "5.1.2",
+        "5.1.4.2",
+        "5.1.4.5",
+        "5.1.5",
+        "6.1.6"
+      ],
+      "icd_reviewed": true,
+      "provider_topics": [
+        {
+          "name": "UMAA::EO::EngineControl::EngineCommandStatusType",
+          "type": "UMAA::EO::EngineControl::EngineCommandStatusType",
+          "role": "status"
+        },
+        {
+          "name": "UMAA::EO::EngineControl::EngineCommandAckReportType",
+          "type": "UMAA::EO::EngineControl::EngineCommandAckReportType",
+          "role": "ack"
+        }
+      ],
+      "consumer_topics": [
+        {
+          "name": "UMAA::EO::EngineControl::EngineCommandType",
+          "type": "UMAA::EO::EngineControl::EngineCommandType",
+          "role": "command"
+        }
+      ],
+      "collection_topics": [],
+      "operations": [
+        "setEngine",
+        "queryEngineCommandAck",
+        "cancelEngineCommand",
+        "reportEngineCommandStatus",
+        "reportEngineCommandAck"
+      ],
+      "official_idl_verified": false,
+      "dds_qos_verified": false,
+      "dds_behavior_verified": false
+    }
+  ]
+}
