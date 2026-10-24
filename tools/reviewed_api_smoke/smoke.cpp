@@ -4,6 +4,10 @@
 #include <type_traits>
 
 namespace api = umaa::generated;
+static_assert(std::is_class_v<api::AnchorControlApi::Command>);
+static_assert(std::is_class_v<api::AnchorSpecsApi::Report>);
+static_assert(std::is_class_v<api::AnchorStatusApi::Report>);
+static_assert(std::is_class_v<api::BatterySpecsApi::Report>);
 static_assert(std::is_class_v<api::BatteryStatusApi::Report>);
 static_assert(std::is_class_v<api::EngineStatusApi::Report>);
 static_assert(std::is_class_v<api::FuelTankSpecsApi::Report>);
