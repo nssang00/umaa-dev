@@ -100,7 +100,7 @@ def inspect_outage(nodes):
                                                 'dev', 'eth0'),
                               check=True, text=True, capture_output=True, timeout=10)
         stats = proc.stdout
-        match = re.search(r'dropped\\s+(\\d+)', stats)
+        match = re.search(r'dropped\s+(\d+)', stats)
         if 'netem' not in status or not match:
             raise RuntimeError('no netem drop counters in ' + node + ': ' + stats)
         drops += int(match.group(1))
