@@ -68,6 +68,6 @@
 - Added `tools/audit_official_idl_catalog.py`, `tools/extract_icd_topic_ledger.py`, `tools/generate_reviewed_type_support.py`, `tools/reviewed_api_smoke` and portable negative regression tests. JSON evidence is uploaded by Actions, official source text remains ephemeral.
 - [Linux DDS+netns+netem + catalog audit run](https://github.com/nssang00/umaa-dev/actions/runs/40112010519): SUCCESS with DDS CTest 4/4, all 8 namespace wire scenarios and netem recovery. G6 strict incomplete gate is **expected FAIL code 3**.
 - [Ubuntu GCC/Clang + Windows MSVC unit/regr run](https://github.com/nssang00/umaa-dev/actions/runs/40112010529): 3/3 jobs SUCCESS.
-- [Windows native official DDS and typed API compile run](https://github.com/nssang00/umaa-dev/actions/runs/40112010626): confirm final job conclusion and record detailed result here if still in progress.
+- [Windows native official DDS and typed API compile run](https://github.com/nssang00/umaa-dev/actions/runs/40112010626): **SUCCESS**; reviewed C++ API compile+CTest **1/1**, synthetic DDS CTest **1/1**, official BatteryStatus/EngineControl DDS CTest **3/3**.
 - G1/G6 **PARTIAL/OPEN**. This is no full UMAA support: only BatteryStatus/EngineControl have real DDS protocol slices, service QoS/roles across all ICDs unverified, LargeSet/List incomplete; RTI Connext 7.7 and interop remain blocked without license. No compliance/certification or production claim.
 - Detailed evidence and next audit steps: `docs/ICD_CATALOG_AUDIT.md`, `docs/DELIVERY_GATES.md`.
