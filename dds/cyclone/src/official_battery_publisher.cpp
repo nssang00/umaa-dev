@@ -31,7 +31,9 @@ int main(int argc, char** argv) {
     if (expected_readers < 1 || expected_readers > 2) return 9;
     dds_publication_matched_status_t matched{};
     bool found=false;
-    for(int n=0;n<200;++n) {
+    // Test-only extension for finite discovery blackout; production limit is unchanged.
+    const int attempts = std::getenv("UMAA_NETEM_RECOVERY") ? 1600 : 200;
+    for(int n=0;n<attempts;++n) {
       CHECK_DDS(dds_get_publication_matched_status(writer,&matched));
       if(matched.current_count>=expected_readers){found=true;break;}
       dds_sleepfor(DDS_MSECS(25));
