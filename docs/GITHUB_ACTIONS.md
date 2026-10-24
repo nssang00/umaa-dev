@@ -29,3 +29,12 @@ Both projects are distinct: the Simulator connects via DDS from an independent p
 - [Full official IDL TypeSupport coverage](https://github.com/nssang00/umaa-dev/actions/runs/39963083783): **352/352** official idlc generation and **352/352** generated C compilation on Ubuntu; this does not establish all service APIs or compliance.
 
 See [ENGINECONTROL_EVIDENCE.md](ENGINECONTROL_EVIDENCE.md) for correct scope limits and links.
+## Multi-node DDS verification with Linux network namespaces (2026-10-24)
+
+- `.github/workflows/dds-netns.yml` runs on **GitHub Actions ubuntu-24.04**. It builds synthetic and official UMAA BatteryStatus/EngineControl DDS binaries, then runs ordinary CTest regression and namespace integration.
+- `tools/dds_netns.sh` creates 3 **different network namespaces** using veth + bridge; IPv4 addresses are 10.233.77.11, .12, and .13. `simulator/dds/run_netns.py` checks distinct network namespace IDs and interface addresses, pins CycloneDDS to eth0 and uses explicit unicast discovery peers (no localhost fallback).
+- Report checks: **1 publisher + 2 subscribers** in three namespaces; both readers must be matched before the publisher emits updates and dispose. EngineControl checks: **1 host + 1 independent simulator** across two namespaces for Command and Update/Cancel flows.
+- Every namespace test failure fails the runner job; `if: always()` tears down the namespaces and uploads log evidence without redistributing the official IDL ZIP.
+- `ci.yml` still runs GCC/Clang on ubuntu-24.04 and MSVC on **windows-2022**. `real-dds-windows.yml` runs native DDS/official IDL tests on Windows and now also triggers on pull requests. Linux network namespaces are not a Windows facility, so Windows checks use separate native DDS processes instead.
+
+This test expands network isolation and multi-node fan-out coverage, but does **not** establish full UMAA 6.0 service, QoS, RTI interoperability, or conformance certification.
