@@ -61,10 +61,12 @@ def confirm_isolation(nodes):
     print('DDS_NETNS_ISOLATION_PASS: ' + ', '.join(nodes), flush=True)
 
 
-def spawn(node, executable, *arguments, readers=1):
+def spawn(node, executable, *arguments, readers=1, recovery=False):
     env = dict(os.environ)
     env['CYCLONEDDS_URI'] = cyclone_config(node)
     env['UMAA_EXPECT_READERS'] = str(readers)
+    if recovery:
+        env['UMAA_NETEM_RECOVERY'] = '1'
     return subprocess.Popen(command_for_node(node, executable, *arguments),
                             env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, start_new_session=True)
@@ -155,9 +157,11 @@ def main():
             netem_active = True
             set_netem(nodes, args.profile)
         for node in sim_nodes:
-            sims.append(spawn(node, args.simulator, *(['--update'] if args.update else [])))
+            sims.append(spawn(node, args.simulator, *(['--update'] if args.update else []),
+                              recovery=args.profile == 'outage-recover'))
         time.sleep(0.8)
-        host = spawn('umaa_ci_pub', args.host, args.module, readers=args.subscribers)
+        host = spawn('umaa_ci_pub', args.host, args.module, readers=args.subscribers,
+                     recovery=args.profile == 'outage-recover')
         if args.profile == 'outage-recover':
             # During blackout all participating egress qdiscs drop every packet.
             # Heal while DDS processes are alive, not between test runs.
@@ -168,7 +172,7 @@ def main():
             clear_netem(nodes)
             netem_active = False
             print('DDS_NETEM_RECOVERY_STARTED: all nodes restored', flush=True)
-        out, _ = host.communicate(timeout=30)
+        out, _ = host.communicate(timeout=55)
         print('HOST OUTPUT:\n' + out, flush=True)
         if host.returncode != 0:
             for node, sim in zip(sim_nodes, sims):
@@ -177,7 +181,7 @@ def main():
                     print(node + ' EARLY OUTPUT:\n' + out, flush=True)
             raise RuntimeError('host returned ' + str(host.returncode))
         for node, sim in zip(sim_nodes, sims):
-            out, _ = sim.communicate(timeout=25)
+            out, _ = sim.communicate(timeout=55)
             print(node + ' OUTPUT:\n' + out, flush=True)
             if sim.returncode != 0 or not any('PASS' in line and 'SIM:' in line
                                                for line in out.splitlines()):
