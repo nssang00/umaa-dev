@@ -69,6 +69,18 @@ jobs:
           sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_battery_publisher build/netns-dds/umaa_official_battery_simulator build/netns-dds/libumaa_dds_battery_module.so --subscribers 2 | tee build/netns-evidence/official-report-3node.log
           sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_engine_host build/netns-dds/umaa_official_engine_simulator build/netns-dds/libumaa_dds_engine_module.so | tee build/netns-evidence/official-command-2node.log
           sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_engine_host build/netns-dds/umaa_official_engine_simulator build/netns-dds/libumaa_dds_engine_module.so --update | tee build/netns-evidence/official-update-2node.log
+      - name: DDS with tc netem delay, jitter, and loss (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_battery_publisher build/netns-dds/umaa_official_battery_simulator build/netns-dds/libumaa_dds_battery_module.so --subscribers 2 --profile degraded | tee build/netns-evidence/netem-official-report-degraded.log
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_engine_host build/netns-dds/umaa_official_engine_simulator build/netns-dds/libumaa_dds_engine_module.so --profile degraded | tee build/netns-evidence/netem-official-command-degraded.log
+      - name: DDS discovery blackout and automatic recovery (Linux)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_battery_publisher build/netns-dds/umaa_official_battery_simulator build/netns-dds/libumaa_dds_battery_module.so --subscribers 2 --profile outage-recover | tee build/netns-evidence/netem-official-report-recovery.log
+          sudo python3 simulator/dds/run_netns.py build/netns-dds/umaa_official_engine_host build/netns-dds/umaa_official_engine_simulator build/netns-dds/libumaa_dds_engine_module.so --profile outage-recover | tee build/netns-evidence/netem-official-command-recovery.log
       - name: Tear down namespaces even on failure
         if: always()
         run: sudo bash tools/dds_netns.sh teardown
