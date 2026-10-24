@@ -87,6 +87,30 @@ jobs:
           for type in EngineCommandType EngineCommandStatusType EngineCommandAckReportType; do
             python3 tools/official_idl_compile.py --root "$RUNNER_TEMP/umaa-6.0-idl" --out "$RUNNER_TEMP/umaa-engine-types" --source "UMAA/EO/EngineControl/$type.idl"
           done
+      - name: Generate TypeSupport for all additional reviewed EO Topic message types
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          doc = json.loads(pathlib.Path("catalog/umaa6-eo-reviewed-subset.json").read_text())
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "umaa-6.0-idl"
+          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "umaa-additional-types"
+          done = set()
+          for svc in doc["services"]:
+              for topic in svc["provider_topics"] + svc["consumer_topics"]:
+                  name = topic["type"]
+                  if svc["name"] in ("UMAA::EO::BatteryStatus", "UMAA::EO::EngineControl"):
+                      continue
+                  if name in done:
+                      continue
+                  done.add(name)
+                  source = "/".join(name.split("::")) + ".idl"
+                  subprocess.run(["python3", "tools/official_idl_compile.py", "--root",
+                                  str(root), "--out", str(out), "--source", source,
+                                  "--generate-only"], check=True)
+          print("OFFICIAL_EXTRA_TOPICS_GENERATED count=", len(done))
+          PY
       - name: Compile generated reviewed C++ service APIs against official TypeSupport
         shell: bash
         run: |
@@ -95,6 +119,7 @@ jobs:
             --catalog catalog/umaa6-eo-reviewed-subset.json \
             --generated-root "$RUNNER_TEMP/umaa-battery-types" \
             --generated-root "$RUNNER_TEMP/umaa-engine-types" \
+            --generated-root "$RUNNER_TEMP/umaa-additional-types" \
             --out build/generated/include/umaa/generated/official_eo_bindings.hpp
           cat > build/generated/official_bindings_smoke.cpp <<'CPP'
           #include "umaa/generated/official_eo_bindings.hpp"
@@ -102,12 +127,16 @@ jobs:
           static_assert(std::is_standard_layout_v<umaa::generated::BatteryStatusApi::Report>);
           static_assert(std::is_standard_layout_v<umaa::generated::EngineControlApi::Command>);
           static_assert(!std::is_abstract_v<umaa::generated::BatteryStatusApi>);
+          static_assert(std::is_standard_layout_v<umaa::generated::MastControlApi::Command>);
+          static_assert(std::is_standard_layout_v<umaa::generated::UVPlatformSpecsApi::UVPlatformCapabilitiesReportType>);
+          static_assert(std::is_standard_layout_v<umaa::generated::UVPlatformSpecsApi::UVPlatformSpecsReportType>);
           int main() { return 0; }
           CPP
           c++ -std=c++17 -fsyntax-only -Wall -Wextra -Werror \
             -I build/generated/include \
             -I "$RUNNER_TEMP/umaa-battery-types" \
             -I "$RUNNER_TEMP/umaa-engine-types" \
+            -I "$RUNNER_TEMP/umaa-additional-types" \
             build/generated/official_bindings_smoke.cpp
       - name: Build synthetic and official DDS binaries
         shell: bash
