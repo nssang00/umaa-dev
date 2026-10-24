@@ -26,7 +26,7 @@ def cyclone_config(node):
     xml = ('<CycloneDDS xmlns="https://cdds.io/config"><Domain Id="any">'
            '<General><Interfaces><NetworkInterface name="eth0"/></Interfaces>'
            '<AllowMulticast>false</AllowMulticast></General>'
-           '<Discovery><Peers AddLocalhost="false">' + peers + '</Peers></Discovery>'
+           '<Discovery><Peers>' + peers + '</Peers></Discovery>'
            '</Domain></CycloneDDS>')
     ET.fromstring(xml)
     return xml
