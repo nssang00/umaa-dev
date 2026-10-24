@@ -74,7 +74,7 @@ public:
       }
       // First request device to cancel previous activity; never claim an
       // update succeeded while old hardware work is still active.
-      if (!handler_.cancel(current.payload)) {
+      if (!safe_cancel(current.payload)) {
         events.push_back({Event::Kind::Ignored, id.session, "UPDATE_NOT_SAFE", ""});
         return events;
       }
@@ -116,7 +116,7 @@ public:
       return {{Event::Kind::Ignored, session, "UNKNOWN_SESSION", ""}};
     it->second.command_gone = true;
     if (!terminal(it->second.state)) {
-      if (!handler_.cancel(it->second.payload)) {
+      if (!safe_cancel(it->second.payload)) {
         return {{Event::Kind::Ignored, session, "CANCEL_NOT_SAFE", ""}};
       }
       transition(it->second, State::CANCELED, "CANCELED", events);
@@ -174,9 +174,19 @@ private:
     s.state = state;
     events.push_back({Event::Kind::Status, s.identity.session, to_string(state), reason});
   }
+  bool safe_cancel(const Payload& payload) {
+    try { return handler_.cancel(payload); }
+    catch (...) { return false; } // Never claim cancellation if user code throws.
+  }
   void execute(Session& s, std::vector<Event>& events) {
     events.push_back({Event::Kind::Ack, s.identity.session, "", ""});
-    if (!handler_.validate(s.payload)) {
+    bool valid_payload = false;
+    try { valid_payload = handler_.validate(s.payload); }
+    catch (...) {
+      transition(s, State::FAILED, "SERVICE_FAILED", events);
+      return;
+    }
+    if (!valid_payload) {
       transition(s, State::FAILED, "VALIDATION_FAILED", events);
       return;
     }
