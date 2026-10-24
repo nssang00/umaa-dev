@@ -2,6 +2,7 @@
 #include "DemoBattery.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstdlib>
 #include "umaa/module_loader.hpp"
 
 #define ENSURE(expr) do { dds_return_t rc_ = (expr); if (rc_ < 0) { \
