@@ -26,7 +26,7 @@ def cyclone_config(node):
     xml = ('<CycloneDDS xmlns="https://cdds.io/config"><Domain Id="any">'
            '<General><Interfaces><NetworkInterface name="eth0"/></Interfaces>'
            '<AllowMulticast>false</AllowMulticast></General>'
-           '<Discovery><Peers>' + peers + '</Peers></Discovery>'
+           '<Discovery><ParticipantIndex>0</ParticipantIndex><Peers>' + peers + '</Peers></Discovery>'
            '</Domain></CycloneDDS>')
     ET.fromstring(xml)
     return xml
@@ -91,6 +91,10 @@ def main():
         out, _ = host.communicate(timeout=30)
         print('HOST OUTPUT:\n' + out, flush=True)
         if host.returncode != 0:
+            for node, sim in zip(sim_nodes, sims):
+                if sim.poll() is not None:
+                    out, _ = sim.communicate()
+                    print(node + ' EARLY OUTPUT:\n' + out, flush=True)
             raise RuntimeError('host returned ' + str(host.returncode))
         for node, sim in zip(sim_nodes, sims):
             out, _ = sim.communicate(timeout=25)
