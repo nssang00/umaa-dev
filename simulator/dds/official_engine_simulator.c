@@ -7,6 +7,7 @@
 #include "UMAA/EO/EngineControl/EngineCommandStatusType.h"
 #include "UMAA/EO/EngineControl/EngineCommandAckReportType.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 typedef UMAA_EO_EngineControl_EngineCommandType Cmd;
@@ -24,7 +25,8 @@ static dds_qos_t* test_qos(void){
  return q;
 }
 static int matched(dds_entity_t writer,dds_entity_t status_reader,dds_entity_t ack_reader){
- for(int tick=0;tick<250;++tick){
+ const int attempts = getenv("UMAA_NETEM_RECOVERY") ? 1600 : 250;
+ for(int tick=0;tick<attempts;++tick){
    dds_publication_matched_status_t publication={0};
    dds_subscription_matched_status_t status={0},ack={0};
    if(dds_get_publication_matched_status(writer,&publication)<0 ||
