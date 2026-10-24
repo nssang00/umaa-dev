@@ -71,3 +71,10 @@
 - [Windows native official DDS and typed API compile run](https://github.com/nssang00/umaa-dev/actions/runs/40112010626): **SUCCESS**; reviewed C++ API compile+CTest **1/1**, synthetic DDS CTest **1/1**, official BatteryStatus/EngineControl DDS CTest **3/3**.
 - G1/G6 **PARTIAL/OPEN**. This is no full UMAA support: only BatteryStatus/EngineControl have real DDS protocol slices, service QoS/roles across all ICDs unverified, LargeSet/List incomplete; RTI Connext 7.7 and interop remain blocked without license. No compliance/certification or production claim.
 - Detailed evidence and next audit steps: `docs/ICD_CATALOG_AUDIT.md`, `docs/DELIVERY_GATES.md`.
+
+### 2026-10-25 — Complete EO 6.1 *literal Topic mapping* (not G6 conformance)
+
+- Reviewed EO 6.0 ICD Sections 6.1.1–6.1.14: all **14 service sections and 21 explicit Topic/IDL type mappings** now appear in the curated catalog. Added AnchorControl, AnchorSpecs, AnchorStatus and BatterySpecs to the previous ten.
+- Added `--require-domain-topic-complete EO` to the pinned six-ICD extraction audit; it fails if even one EO operation Topic is missing from curated entries. It **does not** verify QoS, full Handler runtime, all service roles or Component Definitions.
+- Generated C++ Handler interfaces now cover 14 reviewed EO services/21 official Topic types. Windows MSVC and Ubuntu native build and DDS tests are required evidence for this scope. CO and other ICDs remain an incomplete service catalog.
+- **Delivery decision remains G1 PARTIAL, G6 OPEN, RTI Connext/cross-vendor unverified.**
