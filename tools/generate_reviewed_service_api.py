@@ -27,6 +27,7 @@ def generate(catalog, generated_roots, dest):
         name = svc["name"].split("::")[-1]
         cname = name + "Api"
         role_types = {}
+        reports = []
         for item in svc["provider_topics"] + svc["consumer_topics"]:
             role, type_name = item["role"], item["type"]
             header = type_idl_path(type_name).with_suffix(".h").as_posix()
@@ -34,6 +35,8 @@ def generate(catalog, generated_roots, dest):
             if not found:
                 raise ValueError("official generated header missing for " + type_name)
             role_types[role] = (header, type_name.replace("::", "_"))
+            if role == "report":
+                reports.append((type_name.split("::")[-1], type_name.replace("::", "_")))
             required.append(header)
         if svc["pattern"] == "command_response":
             if set(role_types) != {"command", "ack", "status"}:
@@ -51,16 +54,28 @@ def generate(catalog, generated_roots, dest):
                      "  };",
                      "};"]
         elif svc["pattern"] == "request_reply_without_query_data":
-            if set(role_types) != {"report"}:
-                raise ValueError(name + " must use report subscription only")
-            lines = [f"struct {cname} {{",
-                     f"  using Report = {role_types['report'][1]};",
-                     "  class Handler {",
-                     "   public:",
-                     "    virtual ~Handler() = default;",
-                     "    virtual bool read_report(Report&) const = 0;",
-                     "  };",
-                     "};"]
+            if not reports or set(role_types) != {"report"}:
+                raise ValueError(name + " must use one or more reviewed Report subscriptions")
+            if len(reports) == 1:
+                # Preserve the existing public contract for single-report services.
+                lines = [f"struct {cname} {{",
+                         f"  using Report = {reports[0][1]};",
+                         "  class Handler {",
+                         "   public:",
+                         "    virtual ~Handler() = default;",
+                         "    virtual bool read_report(Report&) const = 0;",
+                         "  };",
+                         "};"]
+            else:
+                # Each Report is a distinct DDS topic, NOT an RPC overload.
+                if len(set(short for short, _ in reports)) != len(reports):
+                    raise ValueError(name + " has colliding report type names")
+                lines = [f"struct {cname} {{"]
+                lines.extend(f"  using {short} = {ctype};" for short, ctype in reports)
+                lines.extend(["  class Handler {", "   public:", "    virtual ~Handler() = default;"])
+                lines.extend(f"    virtual bool read_{short}({short}&) const = 0;"
+                             for short, _ in reports)
+                lines.extend(["  };", "};"])
         else:
             raise ValueError("unsupported binding pattern: " + svc["pattern"])
         chunks.extend(lines)
