@@ -92,7 +92,7 @@ def set_netem(nodes, profile):
 
 
 def parse_netem_drops(stats):
-    match = re.search(r'\\bdropped\\s+(\\d+)\\b', stats)
+    match = re.search(r'dropped[ ]+([0-9]+)', stats)
     if not match:
         raise ValueError('tc netem counters absent: ' + stats)
     return int(match.group(1))
