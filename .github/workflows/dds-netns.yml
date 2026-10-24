@@ -9,6 +9,7 @@ on:
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
       - 'tools/audit_official_idl_catalog.py'
+      - 'tools/generate_reviewed_type_support.py'
       - 'sdk/tests/test_official_inventory.py'
       - 'tools/verify_official_service_types.py'
       - 'tools/generate_reviewed_service_api.py'
@@ -21,6 +22,7 @@ on:
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
       - 'tools/audit_official_idl_catalog.py'
+      - 'tools/generate_reviewed_type_support.py'
       - 'sdk/tests/test_official_inventory.py'
   workflow_dispatch:
 
@@ -87,30 +89,15 @@ jobs:
           for type in EngineCommandType EngineCommandStatusType EngineCommandAckReportType; do
             python3 tools/official_idl_compile.py --root "$RUNNER_TEMP/umaa-6.0-idl" --out "$RUNNER_TEMP/umaa-engine-types" --source "UMAA/EO/EngineControl/$type.idl"
           done
-      - name: Generate TypeSupport for all additional reviewed EO Topic message types
+      - name: Generate TypeSupport for additional reviewed EO Topic message types
         shell: bash
         run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json, os, pathlib, subprocess
-          doc = json.loads(pathlib.Path("catalog/umaa6-eo-reviewed-subset.json").read_text())
-          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "umaa-6.0-idl"
-          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "umaa-additional-types"
-          done = set()
-          for svc in doc["services"]:
-              for topic in svc["provider_topics"] + svc["consumer_topics"]:
-                  name = topic["type"]
-                  if svc["name"] in ("UMAA::EO::BatteryStatus", "UMAA::EO::EngineControl"):
-                      continue
-                  if name in done:
-                      continue
-                  done.add(name)
-                  source = "/".join(name.split("::")) + ".idl"
-                  subprocess.run(["python3", "tools/official_idl_compile.py", "--root",
-                                  str(root), "--out", str(out), "--source", source,
-                                  "--generate-only"], check=True)
-          print("OFFICIAL_EXTRA_TOPICS_GENERATED count=", len(done))
-          PY
+          python3 tools/generate_reviewed_type_support.py \
+            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
+            --out "$RUNNER_TEMP/umaa-additional-types" \
+            --exclude-service UMAA::EO::BatteryStatus \
+            --exclude-service UMAA::EO::EngineControl
       - name: Compile generated reviewed C++ service APIs against official TypeSupport
         shell: bash
         run: |
