@@ -9,6 +9,7 @@ on:
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
       - 'tools/verify_official_service_types.py'
+      - 'tools/generate_reviewed_service_api.py'
       - 'catalog/**'
   pull_request:
     paths:
@@ -60,6 +61,28 @@ jobs:
           for type in EngineCommandType EngineCommandStatusType EngineCommandAckReportType; do
             python3 tools/official_idl_compile.py --root "$RUNNER_TEMP/umaa-6.0-idl" --out "$RUNNER_TEMP/umaa-engine-types" --source "UMAA/EO/EngineControl/$type.idl"
           done
+      - name: Compile generated reviewed C++ service APIs against official TypeSupport
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/generate_reviewed_service_api.py \
+            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --generated-root "$RUNNER_TEMP/umaa-battery-types" \
+            --generated-root "$RUNNER_TEMP/umaa-engine-types" \
+            --out build/generated/include/umaa/generated/official_eo_bindings.hpp
+          cat > build/generated/official_bindings_smoke.cpp <<'CPP'
+          #include "umaa/generated/official_eo_bindings.hpp"
+          #include <type_traits>
+          static_assert(std::is_standard_layout_v<umaa::generated::BatteryStatusApi::Report>);
+          static_assert(std::is_standard_layout_v<umaa::generated::EngineControlApi::Command>);
+          static_assert(!std::is_abstract_v<umaa::generated::BatteryStatusApi>);
+          int main() { return 0; }
+          CPP
+          c++ -std=c++17 -fsyntax-only -Wall -Wextra -Werror \
+            -I build/generated/include \
+            -I "$RUNNER_TEMP/umaa-battery-types" \
+            -I "$RUNNER_TEMP/umaa-engine-types" \
+            build/generated/official_bindings_smoke.cpp
       - name: Build synthetic and official DDS binaries
         shell: bash
         run: |
