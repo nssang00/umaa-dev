@@ -95,7 +95,8 @@ jobs:
             --catalog catalog/umaa6-eo-reviewed-subset.json \
             --source-revision "$rev" \
             --out build/netns-evidence/official-icd-topic-ledger.json \
-            --expect-services 53 --expect-operations 113
+            --expect-services 53 --expect-operations 113 \
+            --require-domain-topic-complete EO
       - name: Check reviewed service contracts against pinned official IDL
         shell: bash
         run: |
