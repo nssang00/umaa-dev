@@ -100,7 +100,7 @@ def load_service(catalog_path: pathlib.Path, service: str, types: dict):
     items = [v for v in catalog.get("services", []) if v.get("name") == service]
     if len(items) != 1: raise SchemaError(f"Exactly one service manifest expected: {service}")
     item = items[0]
-    fq_name = re.compile(r"^[A-Za-z_]\\w*(?:::[A-Za-z_]\\w*)+$")
+    fq_name = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)+$")
     if not isinstance(item.get("name"), str) or not fq_name.fullmatch(item["name"]):
         raise SchemaError("Invalid fully-qualified service name")
     kind = item.get("kind")
