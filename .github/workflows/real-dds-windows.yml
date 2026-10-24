@@ -6,6 +6,12 @@ on:
       - 'dds/cyclone/**'
       - 'simulator/dds/**'
       - 'tools/official_idl_compile.py'
+  pull_request:
+    paths:
+      - '.github/workflows/real-dds-windows.yml'
+      - 'dds/cyclone/**'
+      - 'simulator/dds/**'
+      - 'tools/official_idl_compile.py'
   workflow_dispatch:
 permissions:
   contents: read
