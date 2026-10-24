@@ -8,6 +8,8 @@ on:
       - 'simulator/dds/**'
       - 'tools/dds_netns.sh'
       - 'tools/official_idl_compile.py'
+      - 'tools/verify_official_service_types.py'
+      - 'catalog/**'
   pull_request:
     paths:
       - '.github/workflows/dds-netns.yml'
@@ -43,6 +45,13 @@ jobs:
           echo "9674ef84b92cc296a544d001d58149efbb4650f4fafe3a40819636df49c42411  $RUNNER_TEMP/umaa-6.0-idl.zip" | sha256sum --check
           mkdir -p "$RUNNER_TEMP/umaa-6.0-idl"
           unzip -qq "$RUNNER_TEMP/umaa-6.0-idl.zip" -d "$RUNNER_TEMP/umaa-6.0-idl"
+      - name: Check reviewed service contracts against pinned official IDL
+        shell: bash
+        run: |
+          python3 tools/verify_official_service_types.py \
+            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
+            --report build/netns-evidence/official-service-proof.json
       - name: Generate official UMAA DDS TypeSupport
         shell: bash
         run: |
@@ -91,6 +100,7 @@ jobs:
           name: linux-dds-namespace-integration
           path: |
             build/netns-evidence/*.log
+            build/netns-evidence/*.json
             build/netns-dds/Testing/Temporary/LastTest.log
           if-no-files-found: warn
 
