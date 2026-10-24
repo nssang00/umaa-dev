@@ -48,7 +48,7 @@ on Ubuntu and Windows; generated C++ service contracts also compile on both.
 
 ## Proof and fail-closed controls
 
-- [Linux official IDL, compiled typed APIs, independent netns+netem DDS tests](https://github.com/nssang00/umaa-dev/actions/runs/40112010519).
+- [Linux official IDL, compiled typed APIs, independent netns+netem DDS tests](https://github.com/nssang00/umaa-dev/actions/runs/40112466454).
   Evidence artifact `linux-dds-namespace-integration` includes
   `official-idl-catalog-inventory.json`,
   `official-idl-catalog-strict-evidence.json`,
@@ -81,3 +81,9 @@ on Ubuntu and Windows; generated C++ service contracts also compile on both.
 **No official IDL ZIP, transcribed full ICD text, or restricted files are
 committed to this repository.** Only code, manually curated facts and runtime
 audit metadata are retained.
+
+## Latest verified Windows and Linux service API gates
+
+- [Ubuntu network/IDL/ICD audit](https://github.com/nssang00/umaa-dev/actions/runs/40112466454): explicit EO 14/21 Topic mapping PASS, generated reviewed service C++ contracts 14/21, 352/352 file inventory, DDS CTest 4/4 and 8 isolated process scenarios PASS.
+- [Windows native official DDS + reviewed Handler APIs](https://github.com/nssang00/umaa-dev/actions/runs/40112466468): official reviewed C++ TypeSupport generation 17 additional Topics, 14-service/21-Topic API compilation and CTest 1/1, official DDS Battery/Engine CTest 3/3 PASS.
+- [Linux GCC/Clang and Windows MSVC baseline tests](https://github.com/nssang00/umaa-dev/actions/runs/40112466451): all three jobs PASS. **No release/compliance claim** is implied by this scoped CI success.
