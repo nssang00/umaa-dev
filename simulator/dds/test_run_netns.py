@@ -1,7 +1,7 @@
 import unittest
 import xml.etree.ElementTree as ET
 from run_netns import (
-    NODES, NETEM_PROFILES, cyclone_config, command_for_node, tc_command
+    NODES, NETEM_PROFILES, cyclone_config, command_for_node, tc_command, parse_netem_drops
 )
 
 
@@ -18,6 +18,14 @@ class NetnsConfigurationTests(unittest.TestCase):
             peers = [p.attrib['Address'] for p in doc.findall('.//c:Peer', ns)]
             self.assertEqual(set(peers), set(NODES.values()) - {address})
             self.assertTrue(all(not p.startswith('127.') for p in peers))
+
+    def test_tc_netem_kernel_drop_statistics(self):
+        sample = ('qdisc netem 8006: root refcnt 5 limit 1000 loss 100%\\n'
+                  ' Sent 0 bytes 0 pkt (dropped 37, overlimits 0 requeues 0)')
+        self.assertEqual(parse_netem_drops(sample), 37)
+        self.assertEqual(parse_netem_drops('Sent 1 bytes 1 pkt (dropped 0, overlimits 0)'), 0)
+        with self.assertRaises(ValueError):
+            parse_netem_drops('qdisc noqueue 0: root')
 
     def test_uses_tc_netem_egress_on_isolated_veth(self):
         self.assertEqual(tc_command('umaa_ci_pub', 'replace', 'dev', 'eth0',
