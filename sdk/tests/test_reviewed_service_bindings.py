@@ -52,6 +52,42 @@ class ReviewedServiceBindingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 generate(self.catalog, [root / "no-files"], output)
 
+    def test_one_service_with_two_report_topics(self):
+        service = {
+            "name": "UMAA::EO::UVPlatformSpecs", "icd_reviewed": True,
+            "pattern": "request_reply_without_query_data",
+            "clauses": ["5.2.1", "6.1.14"],
+            "provider_topics": [
+                {"name": "UMAA::EO::UVPlatformSpecs::UVPlatformCapabilitiesReportType",
+                 "type": "UMAA::EO::UVPlatformSpecs::UVPlatformCapabilitiesReportType",
+                 "role": "report"},
+                {"name": "UMAA::EO::UVPlatformSpecs::UVPlatformSpecsReportType",
+                 "type": "UMAA::EO::UVPlatformSpecs::UVPlatformSpecsReportType",
+                 "role": "report"},
+            ],
+            "consumer_topics": []
+        }
+        self.catalog["services"].append(service)
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            for svc in self.catalog["services"]:
+                for topic in svc["provider_topics"] + svc["consumer_topics"]:
+                    path = root / pathlib.Path(*topic["type"].split("::")).with_suffix(".h")
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("/* official generated fixture */\n")
+            out = root / "api.hpp"
+            count, types = generate(self.catalog, [root], out)
+            self.assertEqual((count, types), (3, 6))
+            text = out.read_text()
+            self.assertIn("struct UVPlatformSpecsApi", text)
+            self.assertIn("read_UVPlatformCapabilitiesReportType", text)
+            self.assertIn("read_UVPlatformSpecsReportType", text)
+            self.assertNotIn("RequestClient", text)
+            # Duplicate topic records are not a second DDS contract.
+            service["provider_topics"].append(service["provider_topics"][0].copy())
+            with self.assertRaises(ValueError):
+                generate(self.catalog, [root], out)
+
     def test_incomplete_gate_is_not_silently_marked_complete(self):
         with tempfile.TemporaryDirectory() as td:
             self.catalog["complete"] = True
