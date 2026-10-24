@@ -6,6 +6,7 @@
 #include "umaa/module_loader.hpp"
 #include <cstdio>
 #include <exception>
+#include <cstdlib>
 
 #define CHECK_DDS(x) do { dds_return_t e_=(x); if(e_<0) { \
   std::fprintf(stderr,"DDS error at %d: %s\n",__LINE__,dds_strretcode(-e_)); return 2; } } while(0)
@@ -25,11 +26,14 @@ int main(int argc, char** argv) {
     dds_entity_t writer=dds_create_writer(participant,topic,q,nullptr);
     dds_delete_qos(q);
     CHECK_DDS(writer);
+    const char* required = std::getenv("UMAA_EXPECT_READERS");
+    const int expected_readers = required ? std::atoi(required) : 1;
+    if (expected_readers < 1 || expected_readers > 2) return 9;
     dds_publication_matched_status_t matched{};
     bool found=false;
     for(int n=0;n<200;++n) {
       CHECK_DDS(dds_get_publication_matched_status(writer,&matched));
-      if(matched.current_count>0){found=true;break;}
+      if(matched.current_count>=expected_readers){found=true;break;}
       dds_sleepfor(DDS_MSECS(25));
     }
     if(!found){std::fputs("official publisher: reader not discovered\n",stderr);return 3;}
