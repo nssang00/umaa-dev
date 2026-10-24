@@ -61,7 +61,7 @@ def extract(code: str, markdown: str):
     return records
 
 
-def audit(markdown_dir: Path, official_root: Path, catalog=None, revision=None):
+def audit(markdown_dir: Path, official_root: Path, catalog=None, revision=None, complete_domains=()):
     all_items = []
     sources = {}
     for domain in DOMAINS:
@@ -91,6 +91,24 @@ def audit(markdown_dir: Path, official_root: Path, catalog=None, revision=None):
         absent = sorted(reviewed - available)
         if absent:
             raise ValueError("reviewed contract missing from explicit ICD section: " + repr(absent))
+    completeness = {}
+    for domain in complete_domains:
+        if domain not in DOMAINS:
+            raise ValueError("unsupported ICD domain for completeness: " + domain)
+        if catalog is None:
+            raise ValueError("ICD domain mapping requires curated catalog")
+        documented = {(r["service"], r["topic"]) for r in all_items
+                      if r["service"].startswith("UMAA::" + domain + "::")}
+        curated = {item for item in reviewed if item[0].startswith("UMAA::" + domain + "::")}
+        missing = sorted(documented - curated)
+        if missing:
+            raise ValueError(domain + " ICD Topic mapping incomplete: " + repr(missing[:16]))
+        if not documented:
+            raise ValueError(domain + " has no explicit ICD declarations")
+        completeness[domain] = {"topic_mappings": len(documented),
+                                "service_sections": len({s for s, _ in documented}),
+                                "all_explicit_topic_ids_reviewed": True,
+                                "protocol_qos_verified": False}
     service_names = {r["service"] for r in all_items}
     distinct_topics = {(r["service"], r["topic"]) for r in all_items}
     return {
@@ -104,6 +122,7 @@ def audit(markdown_dir: Path, official_root: Path, catalog=None, revision=None):
         "distinct_service_topic_types": len(distinct_topics),
         "reviewed_catalog_topics_cross_checked": len(reviewed),
         "all_explicit_icd_types_in_official_idl": True,
+        "domain_topic_mapping_checks": completeness,
         "operations": all_items,
         "g6_complete": False,
     }
@@ -115,13 +134,15 @@ def main(argv=None):
     ap.add_argument("--official-root", required=True, type=Path)
     ap.add_argument("--catalog", type=Path)
     ap.add_argument("--source-revision", default="unspecified")
+    ap.add_argument("--require-domain-topic-complete", action="append", default=[])
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--expect-services", type=int, default=53)
     ap.add_argument("--expect-operations", type=int, default=113)
     args = ap.parse_args(argv)
     try:
         reviewed = json.loads(args.catalog.read_text()) if args.catalog else None
-        result = audit(args.markdown_dir, args.official_root, reviewed, args.source_revision)
+        result = audit(args.markdown_dir, args.official_root, reviewed, args.source_revision,
+                       args.require_domain_topic_complete)
         if result["icd_service_sections"] != args.expect_services or result["icd_operation_entries"] != args.expect_operations:
             raise ValueError("ICD extraction cardinality changed: "
                              f"{result['icd_service_sections']} services, {result['icd_operation_entries']} operations")
@@ -132,6 +153,7 @@ def main(argv=None):
               f" operations={result['icd_operation_entries']}"
               f" distinct_topics={result['distinct_service_topic_types']}"
               f" reviewed_topics={result['reviewed_catalog_topics_cross_checked']}"
+              f" completed_domain_topic_maps={list(result['domain_topic_mapping_checks'])}"
               " g6_complete=False")
         return 0
     except (ValueError, OSError, json.JSONDecodeError) as exc:
