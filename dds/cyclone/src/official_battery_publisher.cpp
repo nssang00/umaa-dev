@@ -71,8 +71,12 @@ struct CycloneBatteryWriter final : umaa::ReportTransport<double> {
   void unregister_source(const std::string& source) override {
     if (writer <= 0 || source != "battery-demo")
       throw std::logic_error("unregister without active Report source");
-    // Allow the peer to observe DDS instance disposal before deleting Writer.
-    dds_sleepfor(DDS_MSECS(100));
+    // DDS Reliability acknowledgment, not an arbitrary sleep: under netem
+    // loss the Dispose state must reach every matched reliable reader before
+    // we tear down the Writer. Timeout faults the transport, never silently
+    // declares shutdown successful.
+    require_dds(dds_wait_for_acks(writer, DDS_SECS(5)),
+                "wait for reliable Report/Dispose acknowledgments");
     require_dds(dds_delete(writer), "delete writer");
     writer = 0;
   }
