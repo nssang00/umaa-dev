@@ -39,20 +39,40 @@ def generate(catalog, generated_roots, dest):
                 reports.append((type_name.split("::")[-1], type_name.replace("::", "_")))
             required.append(header)
         if svc["pattern"] == "command_response":
-            if set(role_types) != {"command", "ack", "status"}:
-                raise ValueError(name + " missing validated protocol roles")
-            lines = [f"struct {cname} {{",
-                     f"  using Command = {role_types['command'][1]};",
-                     f"  using Ack = {role_types['ack'][1]};",
-                     f"  using Status = {role_types['status'][1]};",
-                     "  class Handler {",
-                     "   public:",
-                     "    virtual ~Handler() = default;",
-                     "    virtual bool validate(const Command&) = 0;",
-                     "    virtual bool execute(const Command&) = 0;",
-                     "    virtual bool cancel(const Command&) = 0;",
-                     "  };",
-                     "};"]
+            groups = svc.get("command_groups")
+            lines = [f"struct {cname} {{"]
+            if not groups or len(groups) == 1:
+                # Preserve the original C++ API for single Command families.
+                if not {"command", "ack", "status"}.issubset(role_types):
+                    raise ValueError(name + " missing command/ack/status contract")
+                lines += [f"  using Command = {role_types['command'][1]};",
+                          f"  using Ack = {role_types['ack'][1]};",
+                          f"  using Status = {role_types['status'][1]};"]
+                if "execution_status" in role_types:
+                    lines.append(f"  using ExecutionStatus = {role_types['execution_status'][1]};")
+                lines += ["  class Handler {", "   public:", "    virtual ~Handler() = default;",
+                          "    virtual bool validate(const Command&) = 0;",
+                          "    virtual bool execute(const Command&) = 0;",
+                          "    virtual bool cancel(const Command&) = 0;"]
+                if "execution_status" in role_types:
+                    lines.append("    virtual bool read_execution_status(ExecutionStatus&) const = 0;")
+                lines += ["  };", "};"]
+            else:
+                for group in groups:
+                    label = group["name"]
+                    for role, suffix in (("command", "Command"), ("ack", "Ack"), ("status", "Status")):
+                        lines.append(f"  using {label}{suffix} = {group[role].replace('::', '_')};")
+                if "execution_status" in role_types:
+                    lines.append(f"  using ExecutionStatus = {role_types['execution_status'][1]};")
+                lines += ["  class Handler {", "   public:", "    virtual ~Handler() = default;"]
+                for group in groups:
+                    label = group["name"]
+                    lines += [f"    virtual bool validate_{label}(const {label}Command&) = 0;",
+                              f"    virtual bool execute_{label}(const {label}Command&) = 0;",
+                              f"    virtual bool cancel_{label}(const {label}Command&) = 0;"]
+                if "execution_status" in role_types:
+                    lines.append("    virtual bool read_execution_status(ExecutionStatus&) const = 0;")
+                lines += ["  };", "};"]
         elif svc["pattern"] == "request_reply_without_query_data":
             if not reports or set(role_types) != {"report"}:
                 raise ValueError(name + " must use one or more reviewed Report subscriptions")
