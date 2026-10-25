@@ -106,3 +106,13 @@
 - [Ubuntu GCC, Ubuntu Clang, Windows MSVC SDK CTest + Clang UBSan](https://github.com/nssang00/umaa-dev/actions/runs/40155793394): **3/3 PASS**, Clang UBSan step PASS.
 - [Windows native DDS initial run](https://github.com/nssang00/umaa-dev/actions/runs/40155793392): SUCCESS for previous 3 official tests; new SDK Reader test was not included in that CTest regex. Revised Windows workflow **requires** the added reader test; its new run must be verified before claiming Windows new adapter wire proof.
 - Compliance unchanged: G1 and G8 PARTIAL, G6/G7/G11 OPEN, G9/G10 RTI SDK/license BLOCKED, G12 only a bounded UBSan step PASS. CO/EXP and Component Definitions source evidence not fully mapped; do not invent mandatory QoS or declare all services running.
+
+### 2026-10-25 — Fixed real 1%-loss Dispose race and proved cross-platform SDK Reader
+
+- Linux `tc netem` revalidation detected a real intermittent defect: `OFFICIAL_SIM: incomplete 2/3` after both Report values but no Dispose, [failing Actions #40156075600](https://github.com/nssang00/umaa-dev/actions/runs/40156075600). **Do not treat the earlier 11/11 clean run as sufficient stability evidence.**
+- Replaced the fixed 100ms Writer shutdown delay with `dds_wait_for_acks(writer, DDS_SECS(5))` before deleting Writer, checking all errors through `BoundReportProvider` fail-closed behavior. It is a DDS reliable middleware ACK barrier, not an official service QoS conformance proof.
+- Repeated lossy official BatteryStatus tests **3 times for independent C oracle + 3 times for new SDK C++ Reader**, preserving EngineCommand and network recovery tests.
+- [Final Linux runner #40156247032](https://github.com/nssang00/umaa-dev/actions/runs/40156247032): **SUCCESS**, official CTest 5/5, netns+veth+bridge+netem real-wire **15/15**, 100% blackout-heal 3/3, measured 108/72/72 dropped kernel packets.
+- [Final Windows official DDS runner #40156246980](https://github.com/nssang00/umaa-dev/actions/runs/40156246980): **SUCCESS**, standalone SDK-side official C++ Battery Consumer CTest selected and PASS, 4/4 official DDS CTest, 53-service /113-official-Topic MSVC API compile smoke PASS, independent C wire proof PASS.
+- [Final GCC/Clang/MSVC SDK + Clang UBSan #40156246985](https://github.com/nssang00/umaa-dev/actions/runs/40156246985): all 3 jobs SUCCESS, Clang UBSan step SUCCESS.
+- G1/G8 remain PARTIAL: only BatteryStatus Report and EngineControl subset real-wire behaviors implemented. G6/G7/G11 OPEN (official CO/EXP + Component Definitions + full applicable QoS and protocol corpus), RTI vendor and interop BLOCKED, G12 incomplete despite UBSan. No UMAA/K-MOSA certification.
