@@ -102,3 +102,14 @@ audit metadata are retained.
 - [Linux 53/113 audit, C++ compile, DDS netns+netem regression](https://github.com/nssang00/umaa-dev/actions/runs/40153467543): SUCCESS, 4/4 CTest, 8/8 netns DDS scenarios and six-domain 113 Topic completeness proof.
 - [Linux GCC/Clang and Windows MSVC prototype regressions](https://github.com/nssang00/umaa-dev/actions/runs/40153467606): 3/3 jobs SUCCESS.
 - These runs demonstrate compilation of typed API contracts, **not** runtime behavior for 53 services. Real official DDS still covers BatteryStatus and EngineControl subsets.
+
+## DDS runtime binder and fault-injection checkpoint (2026-10-25)
+
+- The SDK now includes `sdk/include/umaa/report_transport.hpp`: a **vendor-neutral, fail-closed** Report Publisher transport with checked Register / Publish / Dispose / Unregister operations. Any unknown DDS vendor operation outcome poisons the binding; it never silently retries and cannot emit a stale/reordered follow-up publication. Reconstruct DDS entities via the owning Host; the binding does not auto-replay uncertain transactions.
+- A separate queryless Report Consumer subscription binding enforces checked Subscribe/Unsubscribe and a new Reader epoch at every clean resubscription; old Reader callbacks are rejected after restart.
+- `dds/cyclone/src/official_battery_publisher.cpp` now uses the common Report transport binding to create/delete the real DDS Writer and write/dispose **official BatteryReportType** data. The current value mapping and QoS are explicitly **demo settings**, not an audited official service QoS/Component specification.
+- The new `umaa_report_transport_test` injects deterministic failures on all four publisher operations, device handler exceptions, subscription, unsubscribe and prior-generation callbacks. It fails closed and does not claim unknown writes were undone.
+- [Linux real-wire / multi-node netem tests](https://github.com/nssang00/umaa-dev/actions/runs/40155133646) verify the initial transport binding; use the final branch commit's Actions for post-restart-epoch and UBSan evidence.
+- Official AUVSI has also released downloadable [UMAA SDK Source Code](https://www.auvsi.org/advocacy/advocacy-initiatives/unmanned-maritime-autonomy-architecture/), a candidate for future verified source/API reuse **after** provenance, licenses and binary/supply-chain inspection. No assumption of equivalence or reuse is made yet.
+
+The overall G1/G6/G7/G8/G11/G12 delivery gates are **not complete**.
