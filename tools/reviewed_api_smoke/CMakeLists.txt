@@ -13,7 +13,8 @@ endforeach()
 add_executable(umaa_reviewed_api_smoke smoke.cpp)
 target_compile_features(umaa_reviewed_api_smoke PRIVATE cxx_std_17)
 target_include_directories(umaa_reviewed_api_smoke PRIVATE
-  "${UMAA_REVIEWED_API_INCLUDE}"
+  "${UMAA_REVIEWED_API_INCLUDE}")
+target_include_directories(umaa_reviewed_api_smoke SYSTEM PRIVATE
   "${UMAA_BATTERY_TYPES_INCLUDE}"
   "${UMAA_ENGINE_TYPES_INCLUDE}"
   "${UMAA_EXTRA_TYPES_INCLUDE}")
