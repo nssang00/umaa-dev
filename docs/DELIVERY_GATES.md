@@ -2,8 +2,8 @@
 
 | Gate | Acceptance test | Current state |
 |---|---|---|
-| G1 User typed API | Generate selected command/report handlers; user file stays intact | PARTIAL: typed interfaces generated and compiled for 53 reviewed literal-service contract shapes / 113 official Topic types across six ICDs on Linux and Windows (verified dedicated official TypeSupport build+smoke); runtime adapters for most services remain OPEN; generated EngineControl user module still ignition-only |
-| G2 C++ common protocol | Command status/ack/update/cancel/recovery policy, report, collection tests | PASS for tested prototype paths |
+| G1 User typed API | Generate selected command/report handlers; user file stays intact | PARTIAL: typed interfaces generated and compiled for 53 reviewed literal-service contract shapes / 113 official Topic types across six ICDs on Linux and Windows (verified dedicated official TypeSupport build+smoke); a transport-bound official BatteryStatus Report writer now owns real DDS writer lifetime and faults shut; queryless reader adapter uses subscription epochs. Runtime adapters for most services remain OPEN; generated EngineControl user module still ignition-only |
+| G2 C++ common protocol | Command status/ack/update/cancel/recovery policy, report, collection tests | PASS for tested prototype paths, including deterministic failure injection for register/write/dispose/unregister and reader subscribe/unsubscribe; full protocol still OPEN |
 | G3 Independent simulator | Runs external process, rejects invalid traces, verifies expected scenarios | PASS for stdio fixture + independent official UMAA Cyclone DDS BatteryStatus/EngineControl Command/Update cross-process scenarios on Windows and Linux; full conformance still OPEN |
 | G4 SDK distribution | Install CMake target and import from external consumer | PASS |
 | G5 Official IDL 6.0 | Generate and C-compile all AUVSI 6.0 IDL types | **PASS for Cyclone DDS C on Ubuntu: 352/352 generated and 352/352 compiled**, official ZIP SHA-pinned; not equivalent to all UMAA service codegen
