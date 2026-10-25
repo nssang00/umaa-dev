@@ -27,14 +27,17 @@ directory names, matching Topic type names, or a compiling Handler contract.
 |---|---:|
 | UMAA official IDL files enumerated | 352 |
 | IDL directory groups that resemble service folders | 61 (not normative service count) |
-| Manually reviewed EO services in SDK catalog | 14 |
-| Types present in official IDL and selected for those services | 21 |
-| Not-yet-reviewed IDL directory groups | 47 |
+| EO ICD explicitly reviewed Topic service sections | 14 |
+| EO explicit official Topic types | 21 |
+| Not-yet-reviewed IDL directory groups | 8 |
 | Public ICD texts processed | 6: EO, MO, MM, SA, SEM, SO |
 | Explicit service sections found in those ICDs | 53 |
 | Explicit operation/Topic/IDL triples in those ICDs | 113 |
-| Pre-reviewed catalog Topic IDs cross-checked against ICD records | 21 |
+| Six-ICD curated service sections | 53 |
+| Six-ICD Topic types checked against official IDL | 113 |
 | Full G6 service/QoS/Component acceptance | **FAIL / OPEN** |
+
+The complete 6-ICD literal Topic/role-shape mapping is stored in `catalog/umaa6-six-icd-reviewed.json`; it covers 53 service headings and 113 Topic IDs, with 5 services using multiple Command groups and 5 MO execution-status side topics. This mapping is not a conformance or QoS claim.
 
 The 14 reviewed EO services are AnchorControl, AnchorSpecs, AnchorStatus,
 BatterySpecs, BatteryStatus, EngineControl, EngineStatus, FuelTankSpecs,
@@ -43,8 +46,7 @@ UVPlatformSpecs. All 14 explicit EO 6.1 service sections and all 21 of their
 Topic IDs now have curated Type/role mappings. This is a **literal Topic mapping**
 milestone, not QoS or runtime-complete certification. Both single- and **multi-Report** service shapes are
 supported by the **typed interface generator**; this is not runtime proof of
-every service protocol. Official TypeSupport for all 21 scoped Topics generated
-on Ubuntu and Windows; generated C++ service contracts also compile on both.
+every service protocol. Official TypeSupport for all 113 scoped Topics generated and typed C++ service contracts compiled on Ubuntu; Windows full-113 compilation requires separate same-commit confirmation.
 
 ## Proof and fail-closed controls
 
@@ -63,7 +65,7 @@ on Ubuntu and Windows; generated C++ service contracts also compile on both.
 
 ## Next audit tasks / release blockers
 
-- **CO ICD** is not present in the pinned six-document transcription batch.
+- **CO ICD** is not present in the pinned six-document transcription batch, although AUVSI publicly lists the CO-EXP ICD 6.0 PDF. Its normative content has not yet been ingested, and the 8 unreviewed IDL directory groups must not be declared to be 8 services.
   Experimental (EXP) services are explicitly out of this nonexperimental
   catalog scope. Complete the authoritative public CO ICD trace separately.
 - Read the complete [AUVSI UMAA release](https://www.auvsi.org/advocacy/advocacy-initiatives/unmanned-maritime-autonomy-architecture/)
@@ -87,3 +89,9 @@ audit metadata are retained.
 - [Ubuntu network/IDL/ICD audit](https://github.com/nssang00/umaa-dev/actions/runs/40112466454): explicit EO 14/21 Topic mapping PASS, generated reviewed service C++ contracts 14/21, 352/352 file inventory, DDS CTest 4/4 and 8 isolated process scenarios PASS.
 - [Windows native official DDS + reviewed Handler APIs](https://github.com/nssang00/umaa-dev/actions/runs/40112466468): official reviewed C++ TypeSupport generation 17 additional Topics, 14-service/21-Topic API compilation and CTest 1/1, official DDS Battery/Engine CTest 3/3 PASS.
 - [Linux GCC/Clang and Windows MSVC baseline tests](https://github.com/nssang00/umaa-dev/actions/runs/40112466451): all three jobs PASS. **No release/compliance claim** is implied by this scoped CI success.
+
+## Six-ICD enlarged catalog evidence (2026-10-25)
+
+- [Linux six-ICD 53 service / 113 Topic contract source audit, compiled SDK API and netns/netem real DDS regression](https://github.com/nssang00/umaa-dev/actions/runs/40153467543): SUCCESS. 352/352 original IDL inventory, six-domain completeness check, official TypeSupport header proof, C++ header smoke and 8 network scenarios.
+- [Ubuntu GCC+Clang and Windows MSVC SDK regression](https://github.com/nssang00/umaa-dev/actions/runs/40153467606): 3/3 PASS. This is SDK simulator/compiler regression, not a proof of Windows official 113-Topic TypeSupport until the dedicated DDS workflow completes.
+- Full service QoS, Component Definitions Provider/Consumer interface and wire semantics, and all-service DDS runtime integrations are still OPEN.
