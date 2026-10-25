@@ -116,7 +116,8 @@ public:
       : transport_(transport) {}
 
   std::uint64_t start() {
-    if (state_ != State::Idle) throw std::logic_error("Report reader not Idle");
+    if (state_ != State::Idle && state_ != State::Stopped)
+      throw std::logic_error("Report reader must be Idle or Stopped");
     auto intents = lifecycle_.start();
     if (intents.size() != 1 ||
         intents[0].kind != ReportIntent<T>::Kind::Subscribe)
