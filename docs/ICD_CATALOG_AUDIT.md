@@ -9,15 +9,15 @@ directory names, matching Topic type names, or a compiling Handler contract.
    `9674ef84b92cc296a544d001d58149efbb4650f4fafe3a40819636df49c42411`)
    fetched on the Linux GitHub runner. `tools/audit_official_idl_catalog.py`
    enumerates every file, computes per-file hashes and highlights candidate
-   directory groups. Only manually reviewed entries of
-   `catalog/umaa6-eo-reviewed-subset.json` enter the service Handler generator.
+   directory groups. Only explicitly reviewed mappings in
+   `catalog/umaa6-six-icd-reviewed.json` enter the scoped service Handler generator.
 2. **Six public 6.0 ICD Markdown transcriptions** from RTI Community commit
    [ecb923646e7f3fe569b773c3946444e793d8a8be](https://github.com/rticommunity/rticonnextdds-usecases-umaa/commit/ecb923646e7f3fe569b773c3946444e793d8a8be),
    consumed ephemerally. `tools/extract_icd_topic_ledger.py` reads explicit
    Section 5.1 / 6.1 operation headers plus literal Namespace / Topic / Data Type
    declarations; every extracted Topic is matched against the official IDL ZIP.
    The resulting `official-icd-topic-ledger.json` keeps ICD clause references
-   and SHA-256 of each transcription. An independent EO-only completeness check requires 14 service sections and 21 literal Topic IDs to match the curated catalog. These transcriptions are secondary sources;
+   and SHA-256 of each transcription. An independent six-domain literal-topic check requires 53 service sections and 113 Topic IDs to match the curated catalog. These transcriptions are secondary sources;
    the AUVSI ICD, Component Definitions and Compliance Specification are the
    authoritative acceptance inputs.
 
@@ -113,3 +113,10 @@ audit metadata are retained.
 - Official AUVSI has also released downloadable [UMAA SDK Source Code](https://www.auvsi.org/advocacy/advocacy-initiatives/unmanned-maritime-autonomy-architecture/), a candidate for future verified source/API reuse **after** provenance, licenses and binary/supply-chain inspection. No assumption of equivalence or reuse is made yet.
 
 The overall G1/G6/G7/G8/G11/G12 delivery gates are **not complete**.
+
+## Verified Report publisher/consumer DDS bindings and netem (2026-10-25)
+
+- [Ubuntu CTest + independent DDS + three additional SDK Reader namespace scenarios](https://github.com/nssang00/umaa-dev/actions/runs/40155793388): **SUCCESS**. Official DDS CTest **5/5** (new SDK-owned official Battery C++ reader test + existing independent C oracle); namespace real wire scenarios **11/11** (8 existing plus three new SDK Reader cases for clean, 40ms/10ms/1% loss, and 100% blackout/heal). The new SDK Reader outage test measured **77 kernel-dropped packets** and verified continued wire communication from the same process after restoring network.
+- [Linux GCC/Clang and Windows MSVC core SDK regression + Clang UBSan](https://github.com/nssang00/umaa-dev/actions/runs/40155793394): **3/3 SUCCESS**; Clang UndefinedBehaviorSanitizer core/module test step SUCCESS.
+- [Windows official TypeSupport and DDS job](https://github.com/nssang00/umaa-dev/actions/runs/40155793392): **SUCCESS**, but this run explicitly selected the *old* 3 official tests; the new SDK Reader was not exercised on Windows. The later Windows workflow revision adds `official_umaa_battery_sdk_reader_wire` to the mandatory regex. Its Actions result must be checked separately before cross-platform reader proof is claimed.
+- Existing independent C Simulator is not replaced by the SDK-side test. A sequence count in the SDK Consumer is a *test-only cache watermark*, not an actual official DDS timestamp field. The current Beta/Battery demo Reliability/History QoS is a test profile and MUST NOT be treated as verified UMAA QoS.
