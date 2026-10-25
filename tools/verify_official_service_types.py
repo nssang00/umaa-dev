@@ -78,8 +78,40 @@ def inspect(catalog, official_root=None, require_complete=False):
                                              "idl_sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
                 except ValueError as exc:
                     errors.append(name + ": " + str(exc))
-        if pattern == "command_response" and (len(roles) != 3 or set(roles) != {"command", "status", "ack"}):
-            errors.append(name + ": command response needs exactly one command, ack, status")
+        if pattern == "command_response":
+            command_types = {t["type"] for t in record.get("consumer_topics", []) if t.get("role") == "command"}
+            ack_types = {t["type"] for t in record.get("provider_topics", []) if t.get("role") == "ack"}
+            status_types = {t["type"] for t in record.get("provider_topics", []) if t.get("role") == "status"}
+            if not command_types or not ack_types or not status_types or set(roles) - {"command", "ack", "status", "execution_status"}:
+                errors.append(name + ": command response needs command, ack, status and optionally execution status")
+            groups = record.get("command_groups")
+            if groups is None:
+                if len(command_types) != 1 or len(ack_types) != 1 or len(status_types) != 1:
+                    errors.append(name + ": multiple command families require explicit command_groups")
+            elif not isinstance(groups, list) or not groups:
+                errors.append(name + ": command_groups must be a nonempty list")
+            else:
+                used = {"command": set(), "ack": set(), "status": set()}
+                group_names = set()
+                for group in groups:
+                    if not isinstance(group, dict):
+                        errors.append(name + ": invalid command group"); continue
+                    label = group.get("name")
+                    if not isinstance(label, str) or not re.fullmatch("[A-Za-z_][A-Za-z0-9_]*", label) or label in group_names:
+                        errors.append(name + ": invalid/duplicate command group name")
+                    group_names.add(label)
+                    for role in ("command", "ack", "status"):
+                        typename = group.get(role)
+                        expected = {"command": command_types, "ack": ack_types, "status": status_types}[role]
+                        if typename not in expected or typename in used[role]:
+                            errors.append(name + ": missing/duplicate " + role + " contract in group " + str(label))
+                        else:
+                            used[role].add(typename)
+                if any(used[role] != expected for role, expected in
+                       (("command", command_types), ("ack", ack_types), ("status", status_types))):
+                    errors.append(name + ": command_groups do not cover all command/ack/status topics")
+            if roles.count("execution_status") > 1:
+                errors.append(name + ": multiple execution status topics require explicit review")
         if pattern == "request_reply_without_query_data" and (not roles or set(roles) != {"report"}):
             errors.append(name + ": queryless request/reply requires one or more Report topics only")
         if pattern == "publish_subscribe" and (not roles or set(roles) != {"report"}):
