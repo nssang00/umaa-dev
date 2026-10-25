@@ -100,4 +100,60 @@ private:
   ReportTransport<T>& transport_;
   State state_{State::Idle};
 };
+// Query-less Request/Reply binding: subscribe to a DDS Report, not an RPC.
+// On any subscription lifecycle failure, reject callbacks until the caller
+// destroys this reader binding. Reader callback epochs prevent restart races.
+struct ReportSubscriptionTransport {
+  virtual ~ReportSubscriptionTransport() = default;
+  virtual void subscribe(std::uint64_t reader_epoch) = 0;
+  virtual void unsubscribe(std::uint64_t reader_epoch) = 0;
+};
+
+template<class T> class BoundReportConsumer {
+public:
+  enum class State { Idle, Active, Stopped, Faulted };
+  explicit BoundReportConsumer(ReportSubscriptionTransport& transport)
+      : transport_(transport) {}
+
+  std::uint64_t start() {
+    if (state_ != State::Idle) throw std::logic_error("Report reader not Idle");
+    auto intents = lifecycle_.start();
+    if (intents.size() != 1 ||
+        intents[0].kind != ReportIntent<T>::Kind::Subscribe)
+      throw std::logic_error("Report lifecycle emitted invalid subscribe");
+    auto epoch = lifecycle_.epoch();
+    try { transport_.subscribe(epoch); }
+    catch (...) { state_ = State::Faulted; throw; }
+    state_ = State::Active;
+    return epoch;
+  }
+  bool receive(const ReportSample<T>& sample, std::uint64_t epoch) {
+    return state_ == State::Active && lifecycle_.receive(sample, epoch);
+  }
+  bool receive_dispose(const std::string& source, std::int64_t timestamp,
+                       std::uint64_t epoch) {
+    return state_ == State::Active &&
+           lifecycle_.receive_dispose(source, timestamp, epoch);
+  }
+  void shutdown() {
+    if (state_ == State::Stopped) return;
+    if (state_ != State::Active) throw std::logic_error("Report reader not Active");
+    auto epoch = lifecycle_.epoch();
+    auto intents = lifecycle_.shutdown();
+    if (intents.size() != 1 ||
+        intents[0].kind != ReportIntent<T>::Kind::Unsubscribe)
+      throw std::logic_error("Report lifecycle emitted invalid unsubscribe");
+    try { transport_.unsubscribe(epoch); }
+    catch (...) { state_ = State::Faulted; throw; }
+    state_ = State::Stopped;
+  }
+  State state() const { return state_; }
+  std::uint64_t epoch() const { return lifecycle_.epoch(); }
+  const ReportCache<T>& cache() const { return lifecycle_.cache(); }
+private:
+  ReportConsumerLifecycle<T> lifecycle_;
+  ReportSubscriptionTransport& transport_;
+  State state_{State::Idle};
+};
+
 } // namespace umaa
