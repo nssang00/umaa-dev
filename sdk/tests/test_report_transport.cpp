@@ -29,6 +29,22 @@ struct Sink : umaa::ReportTransport<int> {
   }
   void unregister_source(const std::string& s) override { assert(s=="sensor"); act("unregister"); }
 };
+struct ReaderSink : umaa::ReportSubscriptionTransport {
+  std::vector<std::string> steps;
+  bool fail_subscribe{false};
+  bool fail_unsubscribe{false};
+  std::uint64_t subscribed_epoch{};
+  void subscribe(std::uint64_t epoch) override {
+    steps.push_back("subscribe");
+    if (fail_subscribe) throw std::runtime_error("reader creation failed");
+    subscribed_epoch = epoch;
+  }
+  void unsubscribe(std::uint64_t epoch) override {
+    assert(epoch == subscribed_epoch);
+    steps.push_back("unsubscribe");
+    if (fail_unsubscribe) throw std::runtime_error("reader teardown failed");
+  }
+};
 template<class Exception, class Fun> void must_throw(Fun&& f) {
   bool did = false;
   try { f(); } catch(const Exception&) { did=true; }
@@ -106,4 +122,39 @@ int main() {
   p7.update(61);
   p7.shutdown(62);
   assert(unrecoverable_sink.history.back()=="unregister");
+  ReaderSink rs;
+  umaa::BoundReportConsumer<int> consumer(rs);
+  assert(!consumer.receive({"sensor", 1, 2}, 0));
+  const auto reader_epoch = consumer.start();
+  assert((rs.steps == std::vector<std::string>{"subscribe"}));
+  assert(!consumer.receive({"sensor", 1, 2}, reader_epoch + 1));
+  assert(consumer.receive({"sensor", 2, 42}, reader_epoch));
+  assert(!consumer.receive({"sensor", 2, 42}, reader_epoch));
+  assert(consumer.cache().latest("sensor")->data == 42);
+  assert(consumer.receive_dispose("sensor", 3, reader_epoch));
+  assert(!consumer.receive({"sensor", 2, 42}, reader_epoch));
+  assert(consumer.receive({"sensor", 4, 43}, reader_epoch));
+  consumer.shutdown();
+  assert(consumer.state() == umaa::BoundReportConsumer<int>::State::Stopped);
+  assert((rs.steps == std::vector<std::string>{"subscribe", "unsubscribe"}));
+  assert(!consumer.receive({"sensor", 5, 44}, reader_epoch));
+  assert(consumer.cache().size() == 0);
+  must_throw<std::logic_error>([&] { consumer.start(); });
+
+  ReaderSink rejected; rejected.fail_subscribe = true;
+  umaa::BoundReportConsumer<int> invalid_reader(rejected);
+  must_throw<std::runtime_error>([&] { invalid_reader.start(); });
+  assert(invalid_reader.state() == umaa::BoundReportConsumer<int>::State::Faulted);
+  assert(!invalid_reader.receive({"sensor", 10, 80}, invalid_reader.epoch()));
+  must_throw<std::logic_error>([&] { invalid_reader.start(); });
+
+  ReaderSink teardown; teardown.fail_unsubscribe = true;
+  umaa::BoundReportConsumer<int> broken_reader(teardown);
+  auto last_epoch = broken_reader.start();
+  assert(broken_reader.receive({"sensor", 10, 80}, last_epoch));
+  must_throw<std::runtime_error>([&] { broken_reader.shutdown(); });
+  assert(broken_reader.state() == umaa::BoundReportConsumer<int>::State::Faulted);
+  assert(!broken_reader.receive({"sensor", 11, 81}, last_epoch));
+  assert(broken_reader.cache().size() == 0);
+
 }
