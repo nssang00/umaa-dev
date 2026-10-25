@@ -97,11 +97,11 @@ jobs:
           $extra = Join-Path $env:RUNNER_TEMP 'umaa-extra-reviewed'
           $apiIncludes = Join-Path (Get-Location) 'build/reviewed-win/include'
           $apiHeader = Join-Path $apiIncludes 'umaa/generated/official_eo_bindings.hpp'
-          python tools/verify_official_service_types.py --catalog catalog/umaa6-eo-reviewed-subset.json --official-root $original
+          python tools/verify_official_service_types.py --catalog catalog/umaa6-six-icd-reviewed.json --official-root $original
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python tools/generate_reviewed_type_support.py --catalog catalog/umaa6-eo-reviewed-subset.json --official-root $original --out $extra --idlc $idlc --exclude-service 'UMAA::EO::BatteryStatus' --exclude-service 'UMAA::EO::EngineControl'
+          python tools/generate_reviewed_type_support.py --catalog catalog/umaa6-six-icd-reviewed.json --official-root $original --out $extra --idlc $idlc --exclude-service 'UMAA::EO::BatteryStatus' --exclude-service 'UMAA::EO::EngineControl'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python tools/generate_reviewed_service_api.py --catalog catalog/umaa6-eo-reviewed-subset.json --generated-root $battery --generated-root $engine --generated-root $extra --out $apiHeader
+          python tools/generate_reviewed_service_api.py --catalog catalog/umaa6-six-icd-reviewed.json --generated-root $battery --generated-root $engine --generated-root $extra --out $apiHeader
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake -S tools/reviewed_api_smoke -B build/reviewed-api-win -G 'Visual Studio 17 2022' -A x64 -DCMAKE_TOOLCHAIN_FILE="$vcpkgRoot/scripts/buildsystems/vcpkg.cmake" -DUMAA_REVIEWED_API_INCLUDE="$apiIncludes" -DUMAA_BATTERY_TYPES_INCLUDE="$battery" -DUMAA_ENGINE_TYPES_INCLUDE="$engine" -DUMAA_EXTRA_TYPES_INCLUDE="$extra"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
