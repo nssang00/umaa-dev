@@ -27,8 +27,10 @@ This repository remains an **incomplete, non-certified SDK prototype**.
 - Original AUVSI 6.0 IDL archive is SHA-256 pinned and acquired only in
   ephemeral GitHub Actions runners. The existing Cyclone C TypeSupport
   coverage proof compiles **352/352 official IDL files** on Ubuntu.
-- `catalog/umaa6-eo-reviewed-subset.json` is now a manually checked
-  **EO ICD Section 6.1 Topic mapping** of 14 services and 21 Topic IDs.
+- `catalog/umaa6-eo-reviewed-subset.json` is now a manually checked **EO Section 6.1 Topic mapping** of 14 services/21 Topics.
+  The larger `catalog/umaa6-six-icd-reviewed.json` now records 53 service
+  sections and 113 explicit Topic definitions across EO/MO/MM/SA/SEM/SO, with
+  paired multi-Command and optional ExecutionStatus contracts.
   The corresponding typed C++ API contracts use actual Cyclone-generated
   official TypeSupport and compile under Linux and Windows. This is **not**
   complete service implementation or all-field execution behavior.
