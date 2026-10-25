@@ -150,9 +150,9 @@ jobs:
           CPP
           c++ -std=c++17 -fsyntax-only -Wall -Wextra -Werror \
             -I build/generated/include \
-            -I "$RUNNER_TEMP/umaa-battery-types" \
-            -I "$RUNNER_TEMP/umaa-engine-types" \
-            -I "$RUNNER_TEMP/umaa-additional-types" \
+            -isystem "$RUNNER_TEMP/umaa-battery-types" \
+            -isystem "$RUNNER_TEMP/umaa-engine-types" \
+            -isystem "$RUNNER_TEMP/umaa-additional-types" \
             build/generated/official_bindings_smoke.cpp
       - name: Build synthetic and official DDS binaries
         shell: bash
