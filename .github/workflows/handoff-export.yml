@@ -20,6 +20,10 @@ jobs:
           set -euo pipefail
           mkdir -p export
           git rev-parse HEAD > export/SOURCE_COMMIT.txt
+          git branch --show-current > export/SOURCE_BRANCH.txt
+          printf '%s\n' 'Snapshot contains only tracked source files at SOURCE_COMMIT.txt.' > export/RESTORE_NOTE.txt
+          printf '%s\n' 'Official AUVSI IDL is NOT redistributed; obtain separately and verify pinned hash.' >> export/RESTORE_NOTE.txt
+          printf '%s\n' 'Run: sha256sum -c SNAPSHOT_SHA256.txt && unzip -tqq umaa-dev-snapshot.zip' >> export/RESTORE_NOTE.txt
           git remote get-url origin > export/SOURCE_REPOSITORY.txt
           git ls-files > export/TRACKED_FILES.txt
           git archive --format=zip -o export/umaa-dev-snapshot.zip HEAD

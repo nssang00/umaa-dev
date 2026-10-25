@@ -58,3 +58,61 @@
 - Linux official DDS CTest 3/3 [PASS](https://github.com/nssang00/umaa-dev/actions/runs/39962602416). Windows official DDS CTest 3/3 [PASS](https://github.com/nssang00/umaa-dev/actions/runs/39962717265). Baseline cross-platform 9 Python generator tests, 6 Simulator tests, CTest 4/4, 4 scenarios [PASS](https://github.com/nssang00/umaa-dev/actions/runs/39962717654).
 - Bugs corrected: generated module MSVC C++17 setting, DDS Dispose evidence carried on last valid sample's instance_state, safe terminal data instance key for Dispose. Regression/negative verification remains enforced.
 - **Unfinished:** full per-service official Handler codegen, EngineControl plugState/propulsion binding, exact service QoS/liveliness/recovery requirements, RTI vendor/cross-vendor tests, safety, formal UMAA/K-MOSA certification.
+
+## 2026-10-25 — G6 catalog and G1 official service API expansion (PR #1)
+
+- Continued approved P1 work on `ci/linux-netns-windows-runners-20261024`. No changes to main, no operational actuation.
+- The authoritative AUVSI 6.0 IDL ZIP (pinned SHA-256 `9674ef84b92cc296a544d001d58149efbb4650f4fafe3a40819636df49c42411`) was inventoried **352/352**. 61 domain/service directory *candidates*; those are not 61 formally specified services.
+- Expanded manually reviewed EO service/topic slices from **2 / 4 Topic types to 10 / 15**. Added six report services, MastControl Command/Ack/Status, and UVPlatformSpecs two separate Report Topics. New codegen supports multi-topic report interface methods and preserves single-report API compatibility. Official C TypesSupport and typed C++ interfaces compile under Ubuntu/GCC and Windows/MSVC.
+- Explicit 6.0 ICD section/Namespace/Topic/Data Type extraction from six pinned public Markdown transcriptions (EO, MO, MM, SA, SEM, SO) recorded **53 service sections / 113 operations and topics**, all checked against official IDL; cross-checked all 15 curated Topic mappings. No inferred flow roles or QoS for unreviewed records. CO and Component Definitions review remain OPEN.
+- Added `tools/audit_official_idl_catalog.py`, `tools/extract_icd_topic_ledger.py`, `tools/generate_reviewed_type_support.py`, `tools/reviewed_api_smoke` and portable negative regression tests. JSON evidence is uploaded by Actions, official source text remains ephemeral.
+- [Linux DDS+netns+netem + catalog audit run](https://github.com/nssang00/umaa-dev/actions/runs/40112010519): SUCCESS with DDS CTest 4/4, all 8 namespace wire scenarios and netem recovery. G6 strict incomplete gate is **expected FAIL code 3**.
+- [Ubuntu GCC/Clang + Windows MSVC unit/regr run](https://github.com/nssang00/umaa-dev/actions/runs/40112010529): 3/3 jobs SUCCESS.
+- [Windows native official DDS and typed API compile run](https://github.com/nssang00/umaa-dev/actions/runs/40112010626): **SUCCESS**; reviewed C++ API compile+CTest **1/1**, synthetic DDS CTest **1/1**, official BatteryStatus/EngineControl DDS CTest **3/3**.
+- G1/G6 **PARTIAL/OPEN**. This is no full UMAA support: only BatteryStatus/EngineControl have real DDS protocol slices, service QoS/roles across all ICDs unverified, LargeSet/List incomplete; RTI Connext 7.7 and interop remain blocked without license. No compliance/certification or production claim.
+- Detailed evidence and next audit steps: `docs/ICD_CATALOG_AUDIT.md`, `docs/DELIVERY_GATES.md`.
+
+### 2026-10-25 — Complete EO 6.1 *literal Topic mapping* (not G6 conformance)
+
+- Reviewed EO 6.0 ICD Sections 6.1.1–6.1.14: all **14 service sections and 21 explicit Topic/IDL type mappings** now appear in the curated catalog. Added AnchorControl, AnchorSpecs, AnchorStatus and BatterySpecs to the previous ten.
+- Added `--require-domain-topic-complete EO` to the pinned six-ICD extraction audit; it fails if even one EO operation Topic is missing from curated entries. It **does not** verify QoS, full Handler runtime, all service roles or Component Definitions.
+- Generated C++ Handler interfaces now cover 14 reviewed EO services/21 official Topic types. Windows MSVC and Ubuntu native build and DDS tests are required evidence for this scope. CO and other ICDs remain an incomplete service catalog.
+- **Delivery decision remains G1 PARTIAL, G6 OPEN, RTI Connext/cross-vendor unverified.**
+
+### 2026-10-25 — Scoped CI result at EO 14/21 mapping checkpoint
+
+- GitHub Actions [Linux official IDL/catalog/netns](https://github.com/nssang00/umaa-dev/actions/runs/40112466454): SUCCESS, EO complete Topic mapping check PASS, 14 reviewed service API contracts/21 official Topic types, DDS CTest 4/4, netns+netem wire 8/8.
+- [Windows native reviewed API + official UMAA DDS](https://github.com/nssang00/umaa-dev/actions/runs/40112466468): SUCCESS, reviewed API smoke CTest 1/1, official DDS CTest 3/3 and synthetic 1/1.
+- [GCC/Clang/MSVC SDK regression](https://github.com/nssang00/umaa-dev/actions/runs/40112466451): SUCCESS for all 3 jobs.
+- Exact G6 result: EO literal service Topic mapping COMPLETE (14/21), **overall G6 still OPEN**; command/report runtime behavior only selected slice; QoS, component constraints, CO, RTI/interop and production safety remain unverified.
+
+### 2026-10-25 — P1 six ICD operation / Topic expansion checkpoint
+
+- Expanded the explicit-service catalog from EO-only 14 services / 21 Topic IDs to **53 service headings / 113 explicit Topic IDs** across EO, MO, MM, SA, SEM, SO with `catalog/umaa6-six-icd-reviewed.json`. These are documented entries in six pinned 6.0 public ICD transcriptions, NOT the normative total for all UMAA or an RTI/Component conformance certification.
+- Added paired `command_groups` validation and C++ typed generated Handler interfaces for MM's 5 services with multiple Add/Delete/Clear Command types, plus MO's 5 ExecutionStatus messages. Preserved the single-Command and single-Report SDK APIs.
+- Six-domain ICD ledger cross-check now rejects omission of any explicit Topic and verifies every referenced type exists in the official SHA-pinned IDL. The independent inventory script reports 352 IDL files, 61 possible service directories, 53 curated directories and 8 remaining unreviewed *directories* (not automatically 8 services).
+- Added `sdk/tests/test_six_icd_contracts.py` for multi-group invalid contracts, type preservation and strict release rejection. Added this test to Ubuntu GCC/Clang and Windows MSVC CI.
+- Linux [GitHub Actions #40153467543](https://github.com/nssang00/umaa-dev/actions/runs/40153467543): **PASS** official 53/113 ledger and generated API compilation, DDS CTest 4/4, netns 8/8 including packet-loss recovery. External official `idlc` headers produce warnings under `-Werror`; kept project `-Werror` and correctly isolated generated third-party headers as system includes instead of weakening project compiler checks.
+- Cross-platform [GitHub Actions #40153467606](https://github.com/nssang00/umaa-dev/actions/runs/40153467606): **3/3 PASS** SDK regression on Ubuntu GCC/Clang and Windows MSVC.
+- Windows official DDS [GitHub Actions #40153467601](https://github.com/nssang00/umaa-dev/actions/runs/40153467601) **SUCCESS**: 109 additional Topic TypeSupport generated, 53 reviewed service C++ APIs/113 official Topic types compiled with MSVC (CTest 1/1), BatteryStatus/EngineControl official DDS 3/3 PASS. Existing runtime DDS still only validates the BatteryStatus / EngineControl vertical slices, not 53 independent service implementations.
+- **G1 remains PARTIAL; G6 remains OPEN.** CO-EXP ICD source, Component Definitions, QoS and independent per-service runtime acceptance not fully reviewed. RTI Connext 7.7 and interoperability remain blocked. Do not assert total UMAA 6.0 compliance.
+
+### 2026-10-25 — Fail-closed Report DDS publisher and queryless reader binding
+
+- Added `sdk/include/umaa/report_transport.hpp`: vendor-neutral, fail-closed Publisher intent executor (checked Register/Publish/Dispose/Unregister, no unsafe retries after unknown transport outcome) and subscription binding that fences callbacks by incremented Reader epochs on clean restart. This is not a normative QoS/vendor production adapter for all 53 services.
+- Added deterministic `sdk/tests/test_report_transport.cpp`: handler exceptions, send/write/Dispose/unregister faults, subscription failures, reader teardown failure, timestamp ordering, cache cleanup, and stale callbacks after Reader restart; included in GCC/Clang/MSVC CTest. `Clang UBSan SDK and module regression` added to Actions.
+- Official `BatteryStatus` example Publisher now creates/deletes the Cyclone Writer through the common transport binder and sends/disposes authentic `BatteryReportType`. Added distinct `umaa_official_battery_sdk_consumer` C++ process, reading authentic official DDS samples through `BoundReportConsumer`, checking Dispose/cache replay and Reader epochs; the independent C oracle remains unchanged.
+- [Linux isolated DDS+netem job](https://github.com/nssang00/umaa-dev/actions/runs/40155793388): **SUCCESS**; CTest **5/5**, original 8 netns scenarios plus SDK Reader clean/degraded/outage-heal 3 scenarios = **11/11**. SDK Reader 100% outage produced **77** real kernel packet drops and recovered after qdisc removal.
+- [Ubuntu GCC, Ubuntu Clang, Windows MSVC SDK CTest + Clang UBSan](https://github.com/nssang00/umaa-dev/actions/runs/40155793394): **3/3 PASS**, Clang UBSan step PASS.
+- [Windows native DDS initial run](https://github.com/nssang00/umaa-dev/actions/runs/40155793392): SUCCESS for previous 3 official tests; new SDK Reader test was not included in that CTest regex. Revised Windows workflow **requires** the added reader test; its new run must be verified before claiming Windows new adapter wire proof.
+- Compliance unchanged: G1 and G8 PARTIAL, G6/G7/G11 OPEN, G9/G10 RTI SDK/license BLOCKED, G12 only a bounded UBSan step PASS. CO/EXP and Component Definitions source evidence not fully mapped; do not invent mandatory QoS or declare all services running.
+
+### 2026-10-25 — Fixed real 1%-loss Dispose race and proved cross-platform SDK Reader
+
+- Linux `tc netem` revalidation detected a real intermittent defect: `OFFICIAL_SIM: incomplete 2/3` after both Report values but no Dispose, [failing Actions #40156075600](https://github.com/nssang00/umaa-dev/actions/runs/40156075600). **Do not treat the earlier 11/11 clean run as sufficient stability evidence.**
+- Replaced the fixed 100ms Writer shutdown delay with `dds_wait_for_acks(writer, DDS_SECS(5))` before deleting Writer, checking all errors through `BoundReportProvider` fail-closed behavior. It is a DDS reliable middleware ACK barrier, not an official service QoS conformance proof.
+- Repeated lossy official BatteryStatus tests **3 times for independent C oracle + 3 times for new SDK C++ Reader**, preserving EngineCommand and network recovery tests.
+- [Final Linux runner #40156247032](https://github.com/nssang00/umaa-dev/actions/runs/40156247032): **SUCCESS**, official CTest 5/5, netns+veth+bridge+netem real-wire **15/15**, 100% blackout-heal 3/3, measured 108/72/72 dropped kernel packets.
+- [Final Windows official DDS runner #40156246980](https://github.com/nssang00/umaa-dev/actions/runs/40156246980): **SUCCESS**, standalone SDK-side official C++ Battery Consumer CTest selected and PASS, 4/4 official DDS CTest, 53-service /113-official-Topic MSVC API compile smoke PASS, independent C wire proof PASS.
+- [Final GCC/Clang/MSVC SDK + Clang UBSan #40156246985](https://github.com/nssang00/umaa-dev/actions/runs/40156246985): all 3 jobs SUCCESS, Clang UBSan step SUCCESS.
+- G1/G8 remain PARTIAL: only BatteryStatus Report and EngineControl subset real-wire behaviors implemented. G6/G7/G11 OPEN (official CO/EXP + Component Definitions + full applicable QoS and protocol corpus), RTI vendor and interop BLOCKED, G12 incomplete despite UBSan. No UMAA/K-MOSA certification.

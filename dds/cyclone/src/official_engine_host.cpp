@@ -9,6 +9,7 @@
 #include "umaa/command_engine.hpp"
 #include "umaa/module_loader.hpp"
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <exception>
@@ -141,7 +142,8 @@ int main(int argc,char** argv) {
   bool accepted=false,disposed=false;
   std::string last_source,last_session;
   Cmd last_cmd{};
-  for(int tick=0;tick<600 && !disposed;++tick) {
+  const int attempts = std::getenv("UMAA_NETEM_RECOVERY") ? 1600 : 600;
+  for(int tick=0;tick<attempts && !disposed;++tick) {
     Cmd data{}; void* samples[1]={&data};dds_sample_info_t info[1]{};
     auto n=dds_take(reader,samples,info,1,1);
     report(n,"read command");

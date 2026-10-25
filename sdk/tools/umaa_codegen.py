@@ -100,6 +100,9 @@ def load_service(catalog_path: pathlib.Path, service: str, types: dict):
     items = [v for v in catalog.get("services", []) if v.get("name") == service]
     if len(items) != 1: raise SchemaError(f"Exactly one service manifest expected: {service}")
     item = items[0]
+    fq_name = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)+$")
+    if not isinstance(item.get("name"), str) or not fq_name.fullmatch(item["name"]):
+        raise SchemaError("Invalid fully-qualified service name")
     kind = item.get("kind")
     if kind not in ("command", "report"):
         raise SchemaError(f"Unsupported service kind {kind}; refusing guessed mapping")
@@ -109,6 +112,8 @@ def load_service(catalog_path: pathlib.Path, service: str, types: dict):
     required_fields = ["command_topic", "status_topic", "ack_topic"] if kind == "command" else ["report_topic"]
     for required in required_fields:
         if not item.get(required): raise SchemaError(f"Missing explicit {required}")
+        if not isinstance(item[required], str) or not fq_name.fullmatch(item[required]):
+            raise SchemaError(f"Invalid fully-qualified {required}")
     return item
 
 
@@ -151,6 +156,12 @@ public:
   virtual bool cancel(const {short}Payload& cmd) override = 0;
 }};
 using {short}Provider = umaa::CommandEngine<{short}Payload>;
+struct {short}ServiceDescriptor {{
+  static constexpr const char* name = "{item['name']}";
+  static constexpr const char* command_topic = "{item['command_topic']}";
+  static constexpr const char* status_topic = "{item['status_topic']}";
+  static constexpr const char* ack_topic = "{item['ack_topic']}";
+}};
 }}  // namespace umaa::generated
 """, encoding="utf-8")
         if not user_file.exists():
@@ -186,6 +197,12 @@ public:
 }};
 using {short}Provider = umaa::ReportProvider<{short}Payload>;
 using {short}ConsumerCache = umaa::ReportCache<{short}Payload>;
+using {short}ProviderLifecycle = umaa::ReportProviderLifecycle<{short}Payload>;
+using {short}ConsumerLifecycle = umaa::ReportConsumerLifecycle<{short}Payload>;
+struct {short}ServiceDescriptor {{
+  static constexpr const char* name = "{item['name']}";
+  static constexpr const char* report_topic = "{item['report_topic']}";
+}};
 }}  // namespace umaa::generated
 """, encoding="utf-8")
         if not user_file.exists():
