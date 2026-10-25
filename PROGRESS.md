@@ -85,3 +85,14 @@
 - [Windows native reviewed API + official UMAA DDS](https://github.com/nssang00/umaa-dev/actions/runs/40112466468): SUCCESS, reviewed API smoke CTest 1/1, official DDS CTest 3/3 and synthetic 1/1.
 - [GCC/Clang/MSVC SDK regression](https://github.com/nssang00/umaa-dev/actions/runs/40112466451): SUCCESS for all 3 jobs.
 - Exact G6 result: EO literal service Topic mapping COMPLETE (14/21), **overall G6 still OPEN**; command/report runtime behavior only selected slice; QoS, component constraints, CO, RTI/interop and production safety remain unverified.
+
+### 2026-10-25 — P1 six ICD operation / Topic expansion checkpoint
+
+- Expanded the explicit-service catalog from EO-only 14 services / 21 Topic IDs to **53 service headings / 113 explicit Topic IDs** across EO, MO, MM, SA, SEM, SO with `catalog/umaa6-six-icd-reviewed.json`. These are documented entries in six pinned 6.0 public ICD transcriptions, NOT the normative total for all UMAA or an RTI/Component conformance certification.
+- Added paired `command_groups` validation and C++ typed generated Handler interfaces for MM's 5 services with multiple Add/Delete/Clear Command types, plus MO's 5 ExecutionStatus messages. Preserved the single-Command and single-Report SDK APIs.
+- Six-domain ICD ledger cross-check now rejects omission of any explicit Topic and verifies every referenced type exists in the official SHA-pinned IDL. The independent inventory script reports 352 IDL files, 61 possible service directories, 53 curated directories and 8 remaining unreviewed *directories* (not automatically 8 services).
+- Added `sdk/tests/test_six_icd_contracts.py` for multi-group invalid contracts, type preservation and strict release rejection. Added this test to Ubuntu GCC/Clang and Windows MSVC CI.
+- Linux [GitHub Actions #40153467543](https://github.com/nssang00/umaa-dev/actions/runs/40153467543): **PASS** official 53/113 ledger and generated API compilation, DDS CTest 4/4, netns 8/8 including packet-loss recovery. External official `idlc` headers produce warnings under `-Werror`; kept project `-Werror` and correctly isolated generated third-party headers as system includes instead of weakening project compiler checks.
+- Cross-platform [GitHub Actions #40153467606](https://github.com/nssang00/umaa-dev/actions/runs/40153467606): **3/3 PASS** SDK regression on Ubuntu GCC/Clang and Windows MSVC.
+- Windows official DDS 53-service API build is a *separate* Actions gate, requiring completion and validation independently. Existing runtime DDS still only validates the BatteryStatus / EngineControl vertical slices, not 53 independent service implementations.
+- **G1 remains PARTIAL; G6 remains OPEN.** CO-EXP ICD source, Component Definitions, QoS and independent per-service runtime acceptance not fully reviewed. RTI Connext 7.7 and interoperability remain blocked. Do not assert total UMAA 6.0 compliance.
