@@ -46,7 +46,7 @@ UVPlatformSpecs. All 14 explicit EO 6.1 service sections and all 21 of their
 Topic IDs now have curated Type/role mappings. This is a **literal Topic mapping**
 milestone, not QoS or runtime-complete certification. Both single- and **multi-Report** service shapes are
 supported by the **typed interface generator**; this is not runtime proof of
-every service protocol. Official TypeSupport for all 113 scoped Topics generated and typed C++ service contracts compiled on Ubuntu; Windows full-113 compilation requires separate same-commit confirmation.
+every service protocol. Official TypeSupport for all 113 scoped Topics generated and typed C++ service contracts compiled on Ubuntu and Windows (native MSVC).
 
 ## Proof and fail-closed controls
 
@@ -95,3 +95,10 @@ audit metadata are retained.
 - [Linux six-ICD 53 service / 113 Topic contract source audit, compiled SDK API and netns/netem real DDS regression](https://github.com/nssang00/umaa-dev/actions/runs/40153467543): SUCCESS. 352/352 original IDL inventory, six-domain completeness check, official TypeSupport header proof, C++ header smoke and 8 network scenarios.
 - [Ubuntu GCC+Clang and Windows MSVC SDK regression](https://github.com/nssang00/umaa-dev/actions/runs/40153467606): 3/3 PASS. This is SDK simulator/compiler regression, not a proof of Windows official 113-Topic TypeSupport until the dedicated DDS workflow completes.
 - Full service QoS, Component Definitions Provider/Consumer interface and wire semantics, and all-service DDS runtime integrations are still OPEN.
+
+## Cross-platform full six-ICD API source proof
+
+- [Windows official 113-topic TypeSupport / 53-service MSVC smoke and 3 official DDS tests](https://github.com/nssang00/umaa-dev/actions/runs/40153467601): SUCCESS, 109 additional official Topic TypeSupports generated, 53 reviewed C++ contracts using 113 official Topic types compiled with MSVC, smoke CTest 1/1, official BatteryStatus/EngineControl DDS CTest 3/3.
+- [Linux 53/113 audit, C++ compile, DDS netns+netem regression](https://github.com/nssang00/umaa-dev/actions/runs/40153467543): SUCCESS, 4/4 CTest, 8/8 netns DDS scenarios and six-domain 113 Topic completeness proof.
+- [Linux GCC/Clang and Windows MSVC prototype regressions](https://github.com/nssang00/umaa-dev/actions/runs/40153467606): 3/3 jobs SUCCESS.
+- These runs demonstrate compilation of typed API contracts, **not** runtime behavior for 53 services. Real official DDS still covers BatteryStatus and EngineControl subsets.
