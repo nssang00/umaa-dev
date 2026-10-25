@@ -139,7 +139,15 @@ int main() {
   assert((rs.steps == std::vector<std::string>{"subscribe", "unsubscribe"}));
   assert(!consumer.receive({"sensor", 5, 44}, reader_epoch));
   assert(consumer.cache().size() == 0);
-  must_throw<std::logic_error>([&] { consumer.start(); });
+  // A new reader generation has a new epoch; queued old callbacks are rejected.
+  const auto new_epoch = consumer.start();
+  assert(new_epoch != reader_epoch);
+  assert(!consumer.receive({"sensor", 5, 44}, reader_epoch));
+  assert(consumer.receive({"sensor", 5, 44}, new_epoch));
+  assert(consumer.cache().latest("sensor")->data == 44);
+  consumer.shutdown();
+  assert((rs.steps == std::vector<std::string>{
+      "subscribe", "unsubscribe", "subscribe", "unsubscribe"}));
 
   ReaderSink rejected; rejected.fail_subscribe = true;
   umaa::BoundReportConsumer<int> invalid_reader(rejected);
