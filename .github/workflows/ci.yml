@@ -39,6 +39,7 @@ jobs:
           python -m unittest discover -s sdk/tests -p test_official_inventory.py -v
           python -m unittest discover -s sdk/tests -p test_generate_reviewed_type_support.py -v
           python -m unittest discover -s sdk/tests -p test_icd_topic_ledger.py -v
+          python -m unittest discover -s sdk/tests -p test_six_icd_contracts.py -v
       - name: Upload evidence even on failure
         if: always()
         uses: actions/upload-artifact@v4
