@@ -2,7 +2,7 @@
 
 | Gate | Acceptance test | Current state |
 |---|---|---|
-| G1 User typed API | Generate selected command/report handlers; user file stays intact | PARTIAL: typed interfaces generated and compiled for 53 reviewed literal-service contract shapes / 113 official Topic types across six ICDs on Linux; Windows pending same-commit native confirmation; runtime adapters for most services remain OPEN; generated EngineControl user module still ignition-only |
+| G1 User typed API | Generate selected command/report handlers; user file stays intact | PARTIAL: typed interfaces generated and compiled for 53 reviewed literal-service contract shapes / 113 official Topic types across six ICDs on Linux and Windows (verified dedicated official TypeSupport build+smoke); runtime adapters for most services remain OPEN; generated EngineControl user module still ignition-only |
 | G2 C++ common protocol | Command status/ack/update/cancel/recovery policy, report, collection tests | PASS for tested prototype paths |
 | G3 Independent simulator | Runs external process, rejects invalid traces, verifies expected scenarios | PASS for stdio fixture + independent official UMAA Cyclone DDS BatteryStatus/EngineControl Command/Update cross-process scenarios on Windows and Linux; full conformance still OPEN |
 | G4 SDK distribution | Install CMake target and import from external consumer | PASS |
