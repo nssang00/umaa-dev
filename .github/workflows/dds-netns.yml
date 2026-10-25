@@ -64,13 +64,13 @@ jobs:
           set -euo pipefail
           python3 tools/audit_official_idl_catalog.py \
             --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
-            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --catalog catalog/umaa6-six-icd-reviewed.json \
             --out build/netns-evidence/official-idl-catalog-inventory.json
           # The release gate MUST remain red until all ICD services and QoS are reviewed.
           set +e
           python3 tools/audit_official_idl_catalog.py \
             --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
-            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --catalog catalog/umaa6-six-icd-reviewed.json \
             --out build/netns-evidence/official-idl-catalog-strict-evidence.json \
             --strict-g6
           rc=$?
@@ -92,16 +92,16 @@ jobs:
           python3 tools/extract_icd_topic_ledger.py \
             --markdown-dir "$RUNNER_TEMP/umaa-icd-md" \
             --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
-            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --catalog catalog/umaa6-six-icd-reviewed.json \
             --source-revision "$rev" \
             --out build/netns-evidence/official-icd-topic-ledger.json \
             --expect-services 53 --expect-operations 113 \
-            --require-domain-topic-complete EO
+            --require-domain-topic-complete EO --require-domain-topic-complete MO --require-domain-topic-complete MM --require-domain-topic-complete SA --require-domain-topic-complete SEM --require-domain-topic-complete SO
       - name: Check reviewed service contracts against pinned official IDL
         shell: bash
         run: |
           python3 tools/verify_official_service_types.py \
-            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --catalog catalog/umaa6-six-icd-reviewed.json \
             --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
             --report build/netns-evidence/official-service-proof.json
       - name: Generate official UMAA DDS TypeSupport
@@ -116,7 +116,7 @@ jobs:
         shell: bash
         run: |
           python3 tools/generate_reviewed_type_support.py \
-            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --catalog catalog/umaa6-six-icd-reviewed.json \
             --official-root "$RUNNER_TEMP/umaa-6.0-idl" \
             --out "$RUNNER_TEMP/umaa-additional-types" \
             --exclude-service UMAA::EO::BatteryStatus \
@@ -126,7 +126,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/generate_reviewed_service_api.py \
-            --catalog catalog/umaa6-eo-reviewed-subset.json \
+            --catalog catalog/umaa6-six-icd-reviewed.json \
             --generated-root "$RUNNER_TEMP/umaa-battery-types" \
             --generated-root "$RUNNER_TEMP/umaa-engine-types" \
             --generated-root "$RUNNER_TEMP/umaa-additional-types" \
@@ -137,6 +137,12 @@ jobs:
           static_assert(std::is_standard_layout_v<umaa::generated::BatteryStatusApi::Report>);
           static_assert(std::is_standard_layout_v<umaa::generated::EngineControlApi::Command>);
           static_assert(!std::is_abstract_v<umaa::generated::BatteryStatusApi>);
+          static_assert(std::is_class_v<umaa::generated::GlobalDriftControlApi::ExecutionStatus>);
+          static_assert(std::is_class_v<umaa::generated::ConditionalControlApi::ConditionalAddCommand>);
+          static_assert(std::is_class_v<umaa::generated::MissionPlanMissionControlApi::MissionPlanMissionDeleteCommand>);
+          static_assert(std::is_class_v<umaa::generated::WindStatusApi::Report>);
+          static_assert(std::is_class_v<umaa::generated::GPSStatusApi::Report>);
+          static_assert(std::is_class_v<umaa::generated::LogReportApi::Report>);
           static_assert(std::is_standard_layout_v<umaa::generated::MastControlApi::Command>);
           static_assert(std::is_standard_layout_v<umaa::generated::UVPlatformSpecsApi::UVPlatformCapabilitiesReportType>);
           static_assert(std::is_standard_layout_v<umaa::generated::UVPlatformSpecsApi::UVPlatformSpecsReportType>);
