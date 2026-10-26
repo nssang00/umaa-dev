@@ -74,6 +74,19 @@ jobs:
             --out /tmp/umaa-official/engine-type-support \
             --source UMAA/EO/EngineControl/EngineCommandAckReportType.idl
           echo OFFICIAL_UMAA_ENGINE_ACK_TYPES_COMPILED
+      - name: Install UMAA Cyclone export and build external real vendor consumer
+        shell: bash
+        run: |
+          cmake -S sdk -B build/real-export -DUMAA_BUILD_TESTS=OFF \
+            -DUMAA_ENABLE_CYCLONE_ADAPTER=ON \
+            -DCMAKE_INSTALL_PREFIX="${PWD}/build/real-export/install"
+          cmake --build build/real-export --parallel 2
+          cmake --install build/real-export
+          cmake -S sdk/tests/consumer_cyclone_real -B build/real-consumer \
+            -DCMAKE_PREFIX_PATH="${PWD}/build/real-export/install"
+          cmake --build build/real-consumer --parallel 2
+          build/real-consumer/umaa_external_real_cyclone
+          echo UMAA_EXTERNAL_REAL_CYCLONE_EXPORT_PASS
       - name: Configure and compile official UMAA type-based C++ plugin Host and independent simulator
         shell: bash
         run: |
