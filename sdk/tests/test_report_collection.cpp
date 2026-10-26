@@ -40,6 +40,36 @@ int main() {
   list.upsert({"a",1,10,"b"});
   list.metadata({"list",2,"b",2,"a"});
   assert(list.snapshot() && list.snapshot()->at(0)==10 && list.snapshot()->at(1)==20);
+  // Multiple collection IDs must never be silently interleaved on one
+  // assembler; reset is explicit and testable.
+  bool bad_collection = false;
+  try { set.metadata({"wrong-id",1,"a",3,""}); }
+  catch (const std::invalid_argument&) { bad_collection = true; }
+  assert(bad_collection);
+  // Timed DDS disposal guards against out-of-order element resurrection.
+  umaa::CollectionAssembler<int> guarded(umaa::CollectionKind::Set, 3);
+  assert(guarded.upsert({"x", 10, 7, ""}));
+  assert(!guarded.dispose("x", 9));
+  assert(guarded.dispose("x", 11));
+  assert(!guarded.upsert({"x", 10, 70, ""}));
+  assert(!guarded.upsert({"x", 11, 70, ""}));
+  assert(!guarded.dispose("x", 11));
+  assert(guarded.upsert({"x", 12, 12, ""}));
+  guarded.metadata({"new", 1, "x", 12, ""});
+  assert(guarded.snapshot() && guarded.snapshot()->at(0) == 12);
+  assert(!guarded.dispose("x", 11));
+  assert(guarded.snapshot()->at(0) == 12);
+  guarded.clear();
+  guarded.metadata({"another", 0, "", std::nullopt, ""});
+  assert(guarded.snapshot() && guarded.snapshot()->empty());
+  // Explicit memory cap instead of unlimited tombstone growth.
+  umaa::CollectionAssembler<int> bounded(umaa::CollectionKind::Set, 2);
+  assert(bounded.dispose("a", 1));
+  assert(bounded.dispose("b", 1));
+  bool over_cap = false;
+  try { bounded.dispose("c", 1); }
+  catch (const std::length_error&) { over_cap = true; }
+  assert(over_cap && bounded.buffered_elements() == 0);
   // Cyclic links must not generate a new committed list.
   list.upsert({"b",3,21,"a"});
   list.metadata({"list",2,"b",3,"a"});

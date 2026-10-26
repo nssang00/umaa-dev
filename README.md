@@ -45,3 +45,14 @@ The official IDL ZIP is downloaded to ephemeral CI space for each applicable run
 This repository contains a **technology prototype**, not a complete UMAA 6.0 implementation or official K-MOSA/UMAA certification. `sdk/fixtures/demo.idl` is synthetic, the generator implements a deliberately restricted IDL subset, and the independent simulator uses a test-fixture stdio protocol. **Real Cyclone DDS tests are now available:** Linux and Windows synthetic-IDL module-backed cross-process samples; **both Linux and Windows** official AUVSI UMAA 6.0 `BatteryReportType` compiled from downloaded IDL and verified over DDS with an independent simulator (20→80→Dispose). Official `EngineCommandType`, `EngineCommandStatusType` and `EngineCommandAckReportType` are now used in live real DDS integration tests for command, cancellation and update on **both** operating systems. The generated user module API is limited to the ignition-state field. RTI Connext DDS and mixed-vendor tests have not been executed. The generic IDL generator is still restricted to synthetic types. A separate fail-closed official `EngineControl` subset generator now creates a DDS-free user Handler and C ABI plugin glue. The native module ABI is project-defined, not an official K-MOSA ABI, and does not implement live hot swap of active commands.
 
 Read [delivery gates](docs/DELIVERY_GATES.md), [architecture](docs/ARCHITECTURE.md), [real DDS evidence](docs/REAL_DDS_EVIDENCE.md) and [validation evidence](docs/CROSS_PLATFORM_VALIDATION.md) before treating any subset as production-ready.
+
+
+## 2026-10-26 P1 Cyclone writer checkpoint (local only)
+
+A reusable CycloneDDS C CommandStatus/Ack writer adapter and an EngineControl
+example-host integration are now in the tree. CMake can optionally export the
+`UMAA::Cyclone` target (`-DUMAA_ENABLE_CYCLONE_ADAPTER=ON`) when CycloneDDS
+is installed. Adapter behavior was checked
+using a test-only DDS ABI mock. **No official DDS or Windows CI run has
+validated these new changes yet.** For precise evidence, scope, and remaining
+acceptance criteria see `docs/P1_CYCLONE_ADAPTER_STATUS.md`.
