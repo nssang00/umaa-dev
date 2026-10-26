@@ -9,12 +9,43 @@ target_include_directories(umaa_sdk_core INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(umaa_sdk_core PROPERTIES EXPORT_NAME Core)
+# Optional vendor binding: normal Core consumers do not need CycloneDDS.
+# Enables a separately exported UMAA::Cyclone target for SDK integrators.
+option(UMAA_ENABLE_CYCLONE_ADAPTER "Export the CycloneDDS Command writer binding" OFF)
+set(UMAA_CYCLONE_FIND_DEPENDENCY "")
+if(UMAA_ENABLE_CYCLONE_ADAPTER)
+  find_package(CycloneDDS CONFIG REQUIRED)
+  add_library(umaa_sdk_cyclone INTERFACE)
+  add_library(UMAA::Cyclone ALIAS umaa_sdk_cyclone)
+  set_target_properties(umaa_sdk_cyclone PROPERTIES EXPORT_NAME Cyclone)
+  target_compile_features(umaa_sdk_cyclone INTERFACE cxx_std_17)
+  target_include_directories(umaa_sdk_cyclone INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../dds/cyclone/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+  target_link_libraries(umaa_sdk_cyclone INTERFACE UMAA::Core CycloneDDS::ddsc)
+  install(TARGETS umaa_sdk_cyclone EXPORT UMAASDKTargets)
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../dds/cyclone/include/"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  set(UMAA_CYCLONE_FIND_DEPENDENCY
+    "include(CMakeFindDependencyMacro)\nfind_dependency(CycloneDDS CONFIG REQUIRED)")
+endif()
 option(UMAA_BUILD_TESTS "Build standalone core tests" ON)
 if(UMAA_BUILD_TESTS)
   enable_testing()
   add_executable(umaa_command_engine_test tests/test_engine.cpp)
   target_link_libraries(umaa_command_engine_test PRIVATE UMAA::Core)
   add_test(NAME umaa_command_engine_test COMMAND umaa_command_engine_test)
+  # Compile CycloneDDS-specific adapter against an explicit *test-only* ABI
+  # shim so failure semantics are testable even where the vendor is absent.
+  add_executable(umaa_cyclone_command_adapter_test tests/test_cyclone_command_adapter.cpp)
+  target_link_libraries(umaa_cyclone_command_adapter_test PRIVATE UMAA::Core)
+  target_include_directories(umaa_cyclone_command_adapter_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/fake_dds"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../dds/cyclone/include")
+  add_test(NAME umaa_cyclone_command_adapter_test COMMAND umaa_cyclone_command_adapter_test)
+  add_executable(umaa_command_transport_test tests/test_command_transport.cpp)
+  target_link_libraries(umaa_command_transport_test PRIVATE UMAA::Core)
+  add_test(NAME umaa_command_transport_test COMMAND umaa_command_transport_test)
   add_executable(umaa_report_collection_test tests/test_report_collection.cpp)
   target_link_libraries(umaa_report_collection_test PRIVATE UMAA::Core)
   add_test(NAME umaa_report_collection_test COMMAND umaa_report_collection_test)

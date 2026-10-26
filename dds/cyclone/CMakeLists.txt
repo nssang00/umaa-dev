@@ -89,7 +89,8 @@ if(DEFINED UMAA_ENGINE_GENERATED_ROOT)
   add_executable(umaa_official_engine_host src/official_engine_host.cpp)
   target_compile_features(umaa_official_engine_host PRIVATE cxx_std_17)
   target_include_directories(umaa_official_engine_host PRIVATE
-      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include")
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/include")
   target_link_libraries(umaa_official_engine_host PRIVATE
       umaa_engine_type_support ${CMAKE_DL_LIBS})
   add_executable(umaa_official_engine_simulator

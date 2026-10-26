@@ -71,6 +71,36 @@ def main() -> int:
         exe_ext = ".exe" if platform.system() == "Windows" else ""
         consumer_bin = consumer / ("Debug" if platform.system() == "Windows" else "") / ("consumer" + exe_ext)
         run_step("external_consumer_smoke", [str(consumer_bin)]); stages.append("external_consumer_smoke")
+        # Optional CycloneDDS CMake export contract. The configuration uses
+        # a test-only no-wire CycloneDDSConfig; this does NOT exercise DDS.
+        cyclone_fixture = ROOT / "sdk/tests/fake_cyclonedds"
+        cyclone_build = ROOT / "build" / ("ci-cyclone-export-" + platform.system().lower() + "-" + args.compiler)
+        cyclone_prefix = ROOT / "build" / ("ci-cyclone-install-" + platform.system().lower() + "-" + args.compiler)
+        cyclone_cmake = ["cmake", "-S", "sdk", "-B", str(cyclone_build),
+                         "-DUMAA_BUILD_TESTS=OFF", "-DUMAA_ENABLE_CYCLONE_ADAPTER=ON",
+                         "-DCycloneDDS_DIR=" + str(cyclone_fixture)]
+        if platform.system() == "Windows":
+            cyclone_cmake += ["-G", "Visual Studio 17 2022", "-A", "x64"]
+        elif args.compiler == "clang":
+            cyclone_cmake += ["-DCMAKE_CXX_COMPILER=clang++"]
+        run_step("cyclone_mock_export_configure", cyclone_cmake); stages.append("cyclone_mock_export_configure")
+        run_step("cyclone_mock_export_build", ["cmake", "--build", str(cyclone_build), "--config", "Debug"]); stages.append("cyclone_mock_export_build")
+        run_step("cyclone_mock_export_install", ["cmake", "--install", str(cyclone_build),
+                                                  "--config", "Debug", "--prefix", str(cyclone_prefix)])
+        stages.append("cyclone_mock_export_install")
+        cyclone_consumer = ROOT / "build" / ("ci-cyclone-consumer-" + platform.system().lower() + "-" + args.compiler)
+        cyclone_external = ["cmake", "-S", "sdk/tests/consumer_cyclone", "-B", str(cyclone_consumer),
+                            "-DUMAAPrototype_DIR=" + str(cyclone_prefix / "lib/cmake/UMAAPrototype"),
+                            "-DCycloneDDS_DIR=" + str(cyclone_fixture)]
+        if platform.system() == "Windows":
+            cyclone_external += ["-G", "Visual Studio 17 2022", "-A", "x64"]
+        elif args.compiler == "clang":
+            cyclone_external += ["-DCMAKE_CXX_COMPILER=clang++"]
+        run_step("cyclone_mock_external_configure", cyclone_external); stages.append("cyclone_mock_external_configure")
+        run_step("cyclone_mock_external_build", ["cmake", "--build", str(cyclone_consumer),
+                                                  "--config", "Debug"]); stages.append("cyclone_mock_external_build")
+        cyclone_mock_bin = cyclone_consumer / ("Debug" if platform.system() == "Windows" else "") / ("umaa_external_cyclone_mock" + exe_ext)
+        run_step("cyclone_mock_external_smoke", [str(cyclone_mock_bin)]); stages.append("cyclone_mock_external_smoke")
         host = build / ("Debug" if platform.system() == "Windows" else "") / ("umaa_mock_engine_host" + exe_ext)
         scenario_paths = sorted((ROOT / "simulator/scenarios").glob("*.json"))
         for path in scenario_paths:
@@ -81,7 +111,7 @@ def main() -> int:
         summary = {"status": "PASS", "platform": platform.platform(), "compiler": args.compiler,
                    "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                    "stages": stages, "scenarios": len(scenario_paths),
-                   "scope": "SYNTHETIC IDL + C++ PROTOTYPE + STDIO ONLY",
+                   "scope": "SYNTHETIC IDL + C++ PROTOTYPE + STDIO + FAKE DDS CMAKE EXPORT ONLY",
                    "actual_dds_tested": False, "k_mosa_certified": False,
                    "official_umaa_conformance": False}
         (EVIDENCE / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")

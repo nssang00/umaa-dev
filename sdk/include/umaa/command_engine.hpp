@@ -64,6 +64,12 @@ public:
         events.push_back({Event::Kind::Ignored, id.session, "SOURCE_CONFLICT", ""});
         return events;
       }
+      // Once an initiating Command has been disposed, an arriving newer
+      // sample must not reactivate work even when cancellation was refused.
+      if (current.command_gone) {
+        events.push_back({Event::Kind::Ignored, id.session, "COMMAND_DISPOSED", ""});
+        return events;
+      }
       if (id.timestamp <= current.identity.timestamp) {
         events.push_back({Event::Kind::Ignored, id.session, "STALE_OR_REPLAY", ""});
         return events;
@@ -100,6 +106,24 @@ public:
       return {{Event::Kind::Ignored, session, "NOT_EXECUTING", ""}};
     transition(it->second, success ? State::COMPLETED : State::FAILED,
                success ? "SUCCEEDED" : failure_reason, events);
+    if (it->second.command_gone) {
+      cleanup(session, events);
+      sessions_.erase(it);
+    }
+    return events;
+  }
+
+  // The host owns clocks and deadline policy; call this only after an
+  // independently established deadline. Fail closed: never report timeout as
+  // terminal while the device refuses or cannot confirm safe cancellation.
+  std::vector<Event> timeout(const std::string& session) {
+    std::vector<Event> events;
+    auto it = sessions_.find(session);
+    if (it == sessions_.end() || terminal(it->second.state))
+      return {{Event::Kind::Ignored, session, "NOT_ACTIVE", ""}};
+    if (!safe_cancel(it->second.payload))
+      return {{Event::Kind::Ignored, session, "TIMEOUT_CANCEL_NOT_SAFE", ""}};
+    transition(it->second, State::FAILED, "TIMEOUT", events);
     if (it->second.command_gone) {
       cleanup(session, events);
       sessions_.erase(it);

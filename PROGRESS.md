@@ -116,3 +116,30 @@
 - [Final Windows official DDS runner #40156246980](https://github.com/nssang00/umaa-dev/actions/runs/40156246980): **SUCCESS**, standalone SDK-side official C++ Battery Consumer CTest selected and PASS, 4/4 official DDS CTest, 53-service /113-official-Topic MSVC API compile smoke PASS, independent C wire proof PASS.
 - [Final GCC/Clang/MSVC SDK + Clang UBSan #40156246985](https://github.com/nssang00/umaa-dev/actions/runs/40156246985): all 3 jobs SUCCESS, Clang UBSan step SUCCESS.
 - G1/G8 remain PARTIAL: only BatteryStatus Report and EngineControl subset real-wire behaviors implemented. G6/G7/G11 OPEN (official CO/EXP + Component Definitions + full applicable QoS and protocol corpus), RTI vendor and interop BLOCKED, G12 incomplete despite UBSan. No UMAA/K-MOSA certification.
+
+### 2026-10-26 — Follow-on autonomous implementation checkpoint (local only)
+
+- Implemented `sdk/include/umaa/command_transport.hpp` as a vendor-neutral
+  `CommandTransport<Payload>` / `BoundCommandProvider<Payload>` event binder.
+  Strict ordering for Command Status/Ack/Dispose and last accepted payload
+  retention (for full Ack Command reconstruction) are tested; any transport
+  exception permanently faults the binder and prevents unreviewed retries.
+- Fixed protocol race: a command disposed while device cancellation is unsafe
+  can no longer accept a newer update. Added explicit `timeout(session)` that
+  requires confirmed safe cancellation before transitioning to FAILED/TIMEOUT.
+- Refactored synthetic stdio EngineControl host to use the new bound transport.
+  Independent fixture scenarios preserve their expected traces.
+- Hardened `CollectionAssembler`: single collection-instance identity, an
+  optional timestamped Dispose with replay/reordering rejection, and bounded
+  tombstone memory (fail closed on overflow). Untimed Dispose remains an
+  explicitly weaker compatibility path.
+- Local evidence: C++ CTest **7/7** (GCC strict & Clang UBSan), Python SDK
+  tests **32/32**, simulator unit tests **6/6**, independent stdio scenarios
+  **4/4**; native GCC and Clang CI-style pipelines each passed install,
+  external consumer and scenario checks. See `docs/COMMAND_TRANSPORT_STATUS.md`.
+- The new binder is NOT wired into the *official* Cyclone EngineControl host
+  and does not supply vendor DDS entities, normative QoS/role mapping, or RTI.
+  Thus G1/G8 remain PARTIAL, G6/G7/G11 OPEN, G9/G10 BLOCKED, G12 PARTIAL.
+  Do not infer 53 real-wire service implementations or UMAA conformance.
+- Official sources and DDS vendors unavailable in this local runtime; no
+  Windows/RTI or new official on-wire tests rerun at this checkpoint.
