@@ -32,7 +32,8 @@ if(DEFINED UMAA_OFFICIAL_GENERATED_ROOT)
   add_executable(umaa_official_battery_publisher src/official_battery_publisher.cpp)
   target_compile_features(umaa_official_battery_publisher PRIVATE cxx_std_17)
   target_include_directories(umaa_official_battery_publisher PRIVATE
-      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include")
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/include")
   target_link_libraries(umaa_official_battery_publisher PRIVATE umaa_official_type_support ${CMAKE_DL_LIBS})
   add_executable(umaa_official_battery_simulator
       "${CMAKE_CURRENT_SOURCE_DIR}/../../simulator/dds/official_battery_subscriber.c")

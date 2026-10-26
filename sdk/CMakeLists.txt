@@ -43,6 +43,12 @@ if(UMAA_BUILD_TESTS)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/fake_dds"
     "${CMAKE_CURRENT_SOURCE_DIR}/../dds/cyclone/include")
   add_test(NAME umaa_cyclone_command_adapter_test COMMAND umaa_cyclone_command_adapter_test)
+  add_executable(umaa_cyclone_report_writer_test tests/test_cyclone_report_writer.cpp)
+  target_link_libraries(umaa_cyclone_report_writer_test PRIVATE UMAA::Core)
+  target_include_directories(umaa_cyclone_report_writer_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/fake_dds"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../dds/cyclone/include")
+  add_test(NAME umaa_cyclone_report_writer_test COMMAND umaa_cyclone_report_writer_test)
   add_executable(umaa_cyclone_report_reader_test tests/test_cyclone_report_reader.cpp)
   target_link_libraries(umaa_cyclone_report_reader_test PRIVATE UMAA::Core)
   target_include_directories(umaa_cyclone_report_reader_test PRIVATE

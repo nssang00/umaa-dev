@@ -34,3 +34,20 @@ void dds_sample_free(void* sample, const dds_topic_descriptor_t* descriptor, uin
 #ifdef __cplusplus
 }
 #endif
+typedef struct dds_publication_matched_status {
+  int32_t current_count;
+} dds_publication_matched_status_t;
+#define DDS_MSECS(n) ((int64_t)(n) * 1000000LL)
+#define DDS_SECS(n) ((int64_t)(n) * 1000000000LL)
+#ifdef __cplusplus
+extern "C" {
+#endif
+dds_entity_t dds_create_writer(dds_entity_t participant, dds_entity_t topic,
+                               const dds_qos_t* qos, const void* listener);
+dds_return_t dds_get_publication_matched_status(dds_entity_t writer,
+                                                dds_publication_matched_status_t* status);
+dds_return_t dds_wait_for_acks(dds_entity_t writer, int64_t timeout);
+void dds_sleepfor(int64_t duration);
+#ifdef __cplusplus
+}
+#endif
