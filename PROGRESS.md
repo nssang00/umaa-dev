@@ -70,7 +70,7 @@
 - [Ubuntu GCC/Clang + Windows MSVC unit/regr run](https://github.com/nssang00/umaa-dev/actions/runs/40112010529): 3/3 jobs SUCCESS.
 - [Windows native official DDS and typed API compile run](https://github.com/nssang00/umaa-dev/actions/runs/40112010626): **SUCCESS**; reviewed C++ API compile+CTest **1/1**, synthetic DDS CTest **1/1**, official BatteryStatus/EngineControl DDS CTest **3/3**.
 - G1/G6 **PARTIAL/OPEN**. This is no full UMAA support: only BatteryStatus/EngineControl have real DDS protocol slices, service QoS/roles across all ICDs unverified, LargeSet/List incomplete; RTI Connext 7.7 and interop remain blocked without license. No compliance/certification or production claim.
-- Detailed evidence and next audit steps: `docs/ICD_CATALOG_AUDIT.md`, `docs/DELIVERY_GATES.md`.
+- Detailed evidence and next audit steps: `docs/specification/ICD_CATALOG_AUDIT.md`, `docs/DELIVERY_GATES.md`.
 
 ### 2026-10-25 — Complete EO 6.1 *literal Topic mapping* (not G6 conformance)
 
@@ -136,7 +136,7 @@
 - Local evidence: C++ CTest **7/7** (GCC strict & Clang UBSan), Python SDK
   tests **32/32**, simulator unit tests **6/6**, independent stdio scenarios
   **4/4**; native GCC and Clang CI-style pipelines each passed install,
-  external consumer and scenario checks. See `docs/COMMAND_TRANSPORT_STATUS.md`.
+  external consumer and scenario checks. See `docs/implementation/COMMAND_TRANSPORT_STATUS.md`.
 - The new binder is NOT wired into the *official* Cyclone EngineControl host
   and does not supply vendor DDS entities, normative QoS/role mapping, or RTI.
   Thus G1/G8 remain PARTIAL, G6/G7/G11 OPEN, G9/G10 BLOCKED, G12 PARTIAL.

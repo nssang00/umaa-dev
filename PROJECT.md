@@ -37,7 +37,7 @@ This repository remains an **incomplete, non-certified SDK prototype**.
 - `tools/audit_official_idl_catalog.py` inventories all 352 files,
   `tools/extract_icd_topic_ledger.py` preserves explicit operations/topics
   from six pinned ICD Markdown transcriptions; their proof and unresolved
-  scope are in `docs/ICD_CATALOG_AUDIT.md`.
+  scope are in `docs/specification/ICD_CATALOG_AUDIT.md`.
 - Working **real DDS vertical slices** remain BatteryStatus Report and
   EngineControl ignition Command/Ack/Status/Update/Cancel/Dispose.
   Tests run as independent DDS processes in Linux and Windows Actions.
