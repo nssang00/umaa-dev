@@ -5,6 +5,15 @@ Two **separate projects** for development and independent verification of UMAA s
 - [sdk/](sdk/): strict synthetic-subset generator and **official-EngineControl-derived ignition Handler generator**, Command/Report/Collection prototype, versioned native service module loader (DLL/SO), installable CMake package and tests.
 - [simulator/](simulator/): independent scenario runner and protocol trace verifier. Baseline synthetic fixture exchanges JSON over stdio. Additional native DDS simulator programs in `simulator/dds/` independently receive samples and Dispose via **real Cyclone DDS**.
 
+## Where things live
+
+The stable implementation directories are `sdk/` (vendor-neutral core),
+`dds/cyclone/` (real DDS transport), `simulator/` (independent verification),
+`catalog/` (reviewed contracts), and `tools/` (build and audit utilities).
+Start at the [documentation index](docs/README.md) and the
+[complete repository map](docs/PROJECT_LAYOUT.md) for file ownership,
+verification evidence, and generated-data rules.
+
 ## Cross-platform GitHub CI — executed
 
 | GitHub-hosted runner | Result |
@@ -55,4 +64,11 @@ example-host integration are now in the tree. CMake can optionally export the
 is installed. Adapter behavior was checked
 using a test-only DDS ABI mock. **No official DDS or Windows CI run has
 validated these new changes yet.** For precise evidence, scope, and remaining
-acceptance criteria see `docs/P1_CYCLONE_ADAPTER_STATUS.md`.
+acceptance criteria see `docs/implementation/P1_CYCLONE_ADAPTER_STATUS.md`.
+
+## Latest structure baseline
+
+The repository layout is documented at [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md).
+The independently verified P1 Reader/Writer checkpoint is [PR #3](https://github.com/nssang00/umaa-dev/pull/3)
+(commit `cb9a87f`); older sections above remain as dated historical notes.
+Structure maintenance does not expand the current UMAA service-conformance scope.
