@@ -40,6 +40,26 @@ jobs:
           if (-not (Test-Path $vcpkg)) { throw "vcpkg missing at $vcpkg" }
           & $vcpkg install 'cyclonedds[idlc]:x64-windows'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install real Cyclone export and build external Windows Consumer
+        shell: pwsh
+        run: |
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = 'C:\vcpkg' }
+          $install = Join-Path (Get-Location) 'build/real-export-win/install'
+          cmake -S sdk -B build/real-export-win -G 'Visual Studio 17 2022' -A x64 -DCMAKE_TOOLCHAIN_FILE="$vcpkgRoot/scripts/buildsystems/vcpkg.cmake" -DUMAA_BUILD_TESTS=OFF -DUMAA_ENABLE_CYCLONE_ADAPTER=ON -DCMAKE_INSTALL_PREFIX="$install"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build/real-export-win --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --install build/real-export-win --config Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake -S sdk/tests/consumer_cyclone_real -B build/real-consumer-win -G 'Visual Studio 17 2022' -A x64 -DCMAKE_TOOLCHAIN_FILE="$vcpkgRoot/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="$install"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build/real-consumer-win --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:PATH = "$vcpkgRoot/installed/x64-windows/bin;$env:PATH"
+          & 'build/real-consumer-win/Release/umaa_external_real_cyclone.exe'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host 'UMAA_EXTERNAL_REAL_CYCLONE_EXPORT_PASS'
       - name: Configure
         shell: pwsh
         run: |

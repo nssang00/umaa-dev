@@ -5,9 +5,11 @@
 #include <dds/dds.h>
 #include "UMAA/EO/BatteryStatus/BatteryReportType.h"
 #include "umaa/report_transport.hpp"
+#include "umaa/cyclone_report_reader.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -15,31 +17,6 @@ static void check_dds(dds_return_t rc, const char* step) {
   if (rc < 0) throw std::runtime_error(std::string(step) + ": " + dds_strretcode(-rc));
 }
 
-struct CycloneBatteryReader final : umaa::ReportSubscriptionTransport {
-  dds_entity_t participant{};
-  dds_entity_t topic{};
-  dds_entity_t reader{};
-  std::uint64_t active_epoch{};
-  CycloneBatteryReader(dds_entity_t p, dds_entity_t t) : participant(p), topic(t) {}
-  void subscribe(std::uint64_t epoch) override {
-    if (reader > 0) throw std::logic_error("duplicate Battery reader");
-    dds_qos_t* q = dds_create_qos();
-    if (!q) throw std::runtime_error("reader QoS allocation failed");
-    // Demo test QoS, not yet independently checked against Components.
-    dds_qset_reliability(q, DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
-    dds_qset_history(q, DDS_HISTORY_KEEP_LAST, 16);
-    reader = dds_create_reader(participant, topic, q, nullptr);
-    dds_delete_qos(q);
-    check_dds(reader, "create reader");
-    active_epoch = epoch;
-  }
-  void unsubscribe(std::uint64_t epoch) override {
-    if (reader <= 0 || active_epoch != epoch)
-      throw std::logic_error("unregister wrong Battery reader epoch");
-    check_dds(dds_delete(reader), "delete reader");
-    reader = 0;
-  }
-};
 
 int main() {
   dds_entity_t participant = 0;
@@ -50,42 +27,42 @@ int main() {
         participant, &UMAA_EO_BatteryStatus_BatteryReportType_desc,
         "BatteryReportType", nullptr, nullptr);
     check_dds(topic, "create official Battery topic");
-    CycloneBatteryReader transport(participant, topic);
+    std::unique_ptr<dds_qos_t, decltype(&dds_delete_qos)> qos(
+        dds_create_qos(), &dds_delete_qos);
+    if (!qos) throw std::runtime_error("reader QoS allocation failed");
+    // Demo settings, not reviewed mandatory UMAA service QoS.
+    dds_qset_reliability(qos.get(), DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
+    dds_qset_history(qos.get(), DDS_HISTORY_KEEP_LAST, 16);
+    umaa::cyclone::ReportReader<UMAA_EO_BatteryStatus_BatteryReportType> transport(
+        participant, topic, &UMAA_EO_BatteryStatus_BatteryReportType_desc, qos.get());
     umaa::BoundReportConsumer<double> consumer(transport);
     auto epoch = consumer.start();
     int phase = 0;
     const int attempts = std::getenv("UMAA_NETEM_RECOVERY") ? 1600 : 250;
     for (int attempt = 0; attempt < attempts && phase < 3; ++attempt) {
-      UMAA_EO_BatteryStatus_BatteryReportType data{};
-      void* samples[1] = {&data};
-      dds_sample_info_t info[1]{};
-      dds_return_t count = dds_take(transport.reader, samples, info, 1, 1);
-      check_dds(count, "take Battery sample");
-      if (count == 0) {
-        dds_sleepfor(DDS_MSECS(25));
-        continue;
-      }
-      if (info[0].valid_data) {
-        const double expected = phase == 0 ? 20.0 : 80.0;
-        if (phase > 1 || !data.chargeRemaining ||
-            *data.chargeRemaining != expected)
-          throw std::runtime_error("Battery Report out of order");
-        // The test uses scenario event sequence numbers as cache watermarks.
-        // These are NOT official DDS sample timestamps.
-        if (!consumer.receive({"battery-demo", phase + 1, *data.chargeRemaining}, epoch))
-          throw std::runtime_error("cache rejected fresh official Report");
-        ++phase;
-      } else if (info[0].instance_state == DDS_IST_NOT_ALIVE_DISPOSED) {
-        if (phase != 2 || !consumer.receive_dispose("battery-demo", 3, epoch))
-          throw std::runtime_error("missing/invalid DDS Dispose");
-        if (consumer.cache().latest("battery-demo"))
-          throw std::runtime_error("disposed Report remains cached");
-        if (consumer.receive({"battery-demo", 2, 80.0}, epoch))
-          throw std::runtime_error("stale Report replay resurrected disposed data");
-        ++phase;
-      }
-      dds_sample_free(&data, &UMAA_EO_BatteryStatus_BatteryReportType_desc,
-                      DDS_FREE_CONTENTS);
+      const bool received = transport.poll(epoch,
+          [&](const UMAA_EO_BatteryStatus_BatteryReportType& data,
+              const dds_sample_info_t& info) {
+        if (info.valid_data) {
+          const double expected = phase == 0 ? 20.0 : 80.0;
+          if (phase > 1 || !data.chargeRemaining ||
+              *data.chargeRemaining != expected)
+            throw std::runtime_error("Battery Report out of order");
+          // Scenario watermarks, not official DDS timestamps.
+          if (!consumer.receive({"battery-demo", phase + 1, *data.chargeRemaining}, epoch))
+            throw std::runtime_error("cache rejected fresh official Report");
+          ++phase;
+        } else if (info.instance_state == DDS_IST_NOT_ALIVE_DISPOSED) {
+          if (phase != 2 || !consumer.receive_dispose("battery-demo", 3, epoch))
+            throw std::runtime_error("missing/invalid DDS Dispose");
+          if (consumer.cache().latest("battery-demo"))
+            throw std::runtime_error("disposed Report remains cached");
+          if (consumer.receive({"battery-demo", 2, 80.0}, epoch))
+            throw std::runtime_error("stale Report replay resurrected disposed data");
+          ++phase;
+        }
+      });
+      if (!received) dds_sleepfor(DDS_MSECS(25));
     }
     if (phase != 3) throw std::runtime_error("Battery Report subscriber incomplete");
     consumer.shutdown();

@@ -5,9 +5,11 @@
 #include "UMAA/EO/BatteryStatus/BatteryReportType.h"
 #include "umaa/module_loader.hpp"
 #include "umaa/report_transport.hpp"
+#include "umaa/cyclone_report_writer.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -24,61 +26,20 @@ static void require_dds(dds_return_t result, const char* action) {
 // The verified SDK lifecycle now controls when the DDS Writer is allocated,
 // used, disposed and deleted. Topic/QoS values below are demo test settings;
 // mandatory, per-service UMAA QoS is not yet established by Component specs.
-struct CycloneBatteryWriter final : umaa::ReportTransport<double> {
-  dds_entity_t participant{};
-  dds_entity_t topic{};
-  dds_entity_t writer{};
-  int expected_readers{1};
-  double charge{};
-  UMAA_EO_BatteryStatus_BatteryReportType message{};
-
-  CycloneBatteryWriter(dds_entity_t p, dds_entity_t t, int readers)
-      : participant(p), topic(t), expected_readers(readers) {
-    if (readers < 1 || readers > 2) throw std::invalid_argument("invalid reader count");
-    message.chargeRemaining = &charge;
+struct BatteryMapper {
+  mutable double charge{};
+  UMAA_EO_BatteryStatus_BatteryReportType make_report(
+      const umaa::ReportSample<double>& report) const {
+    charge = report.data;
+    UMAA_EO_BatteryStatus_BatteryReportType sample{};
+    sample.chargeRemaining = &charge;
+    return sample;
   }
-
-  void register_source(const std::string& source) override {
-    if (source != "battery-demo" || writer > 0)
-      throw std::logic_error("unexpected Battery source registration");
-    dds_qos_t* q = dds_create_qos();
-    if (!q) throw std::runtime_error("cannot allocate DDS QoS");
-    dds_qset_reliability(q, DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
-    dds_qset_history(q, DDS_HISTORY_KEEP_LAST, 16);
-    writer = dds_create_writer(participant, topic, q, nullptr);
-    dds_delete_qos(q);
-    require_dds(writer, "create writer");
-    dds_publication_matched_status_t matched{};
-    const int attempts = std::getenv("UMAA_NETEM_RECOVERY") ? 1600 : 200;
-    for (int n = 0; n < attempts; ++n) {
-      require_dds(dds_get_publication_matched_status(writer, &matched), "reader discovery");
-      if (matched.current_count >= expected_readers) return;
-      dds_sleepfor(DDS_MSECS(25));
-    }
-    throw std::runtime_error("official publisher: reader not discovered");
-  }
-  void publish(const umaa::ReportSample<double>& sample) override {
-    if (writer <= 0 || sample.source != "battery-demo")
-      throw std::logic_error("write without registered Report source");
-    charge = sample.data;
-    require_dds(dds_write(writer, &message), "publish Report");
-  }
-  void dispose(const std::string& source, std::int64_t timestamp) override {
-    if (writer <= 0 || source != "battery-demo" || timestamp <= 0)
-      throw std::logic_error("dispose without registered Report source");
-    require_dds(dds_dispose(writer, &message), "dispose Report");
-  }
-  void unregister_source(const std::string& source) override {
-    if (writer <= 0 || source != "battery-demo")
-      throw std::logic_error("unregister without active Report source");
-    // DDS Reliability acknowledgment, not an arbitrary sleep: under netem
-    // loss the Dispose state must reach every matched reliable reader before
-    // we tear down the Writer. Timeout faults the transport, never silently
-    // declares shutdown successful.
-    require_dds(dds_wait_for_acks(writer, DDS_SECS(5)),
-                "wait for reliable Report/Dispose acknowledgments");
-    require_dds(dds_delete(writer), "delete writer");
-    writer = 0;
+  UMAA_EO_BatteryStatus_BatteryReportType make_dispose(
+      const std::string&, std::int64_t) const {
+    UMAA_EO_BatteryStatus_BatteryReportType sample{};
+    sample.chargeRemaining = &charge;
+    return sample;
   }
 };
 
@@ -96,7 +57,17 @@ int main(int argc, char** argv) {
     require_dds(topic, "create official BatteryReportType topic");
     const char* required = std::getenv("UMAA_EXPECT_READERS");
     const int readers = required ? std::atoi(required) : 1;
-    CycloneBatteryWriter transport(participant, topic, readers);
+    if (readers < 1 || readers > 2) throw std::invalid_argument("invalid reader count");
+    std::unique_ptr<dds_qos_t, decltype(&dds_delete_qos)> qos(
+        dds_create_qos(), &dds_delete_qos);
+    if (!qos) throw std::runtime_error("cannot allocate DDS QoS");
+    // Demonstration profile only: not reviewed per-service mandatory QoS.
+    dds_qset_reliability(qos.get(), DDS_RELIABILITY_RELIABLE, DDS_SECS(1));
+    dds_qset_history(qos.get(), DDS_HISTORY_KEEP_LAST, 16);
+    const int attempts = std::getenv("UMAA_NETEM_RECOVERY") ? 1600 : 200;
+    umaa::cyclone::ReportWriter<double, UMAA_EO_BatteryStatus_BatteryReportType,
+                                BatteryMapper> transport(
+        "battery-demo", participant, topic, qos.get(), BatteryMapper{}, readers, attempts);
     umaa::BoundReportProvider<double> provider("battery-demo", handler, transport);
     provider.start(1);
     dds_sleepfor(DDS_MSECS(150));
